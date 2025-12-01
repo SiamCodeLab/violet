@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -41,14 +42,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 // Collapse Button
                 Padding(
-                  padding: EdgeInsets.only(right: isCollapsed ? 8 : 16),
+                  padding: EdgeInsets.only(left: isCollapsed ? 10 : 16,),
                   child: Align(
-                    alignment: isCollapsed ? Alignment.center : Alignment.centerRight,
+                    alignment: Alignment.centerLeft,
                     child: IconButton(
-                      icon: Icon(
-                        isCollapsed ? Icons.menu : Icons.close,
+                      icon: Image.asset(
+                        PathStrings.menuIcon,
+                        width: 20,
+                        height: 20,
                         color: Colors.white,
-                        size: 28,
                       ),
                       tooltip: isCollapsed ? 'Expand menu' : 'Collapse menu',
                       onPressed: () {
@@ -61,8 +63,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(height: 10),
 
                 // Sidebar Items
-                _sidebarItem(Icons.home, "Home", "home", collapsed: isCollapsed),
-                _sidebarItem(Icons.chat_bubble_outline, "New Chat", "new_chat", collapsed: isCollapsed),
+                _sidebarItem(PathStrings.homeIcon, "Home", "home", collapsed: isCollapsed),
+                _sidebarItem(PathStrings.newIcon, "New Chat", "new_chat", collapsed: isCollapsed),
 
                 const SizedBox(height: 8),
 
@@ -227,24 +229,18 @@ class _ChatScreenState extends State<ChatScreen> {
                         Column(
                           children: [
                             Container(
-                              constraints: const BoxConstraints(maxWidth: 700),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              constraints: const BoxConstraints(maxWidth: 1200, minHeight: 50),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    blurRadius: 20,
-                                    color: Colors.black.withOpacity(0.1),
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey.shade300)
                               ),
                               child: Row(
                                 children: [
                                   IconButton(
                                     icon: Icon(
-                                      Icons.add_circle_outline,
+                                      Icons.add,
                                       color: Color(ThemeColor.primary),
                                       size: 26,
                                     ),
@@ -294,7 +290,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 "Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color(ThemeColor.primary).withOpacity(0.6),
+                                  color: Colors.grey,
                                   fontSize: 12,
                                   height: 1.4,
                                 ),
@@ -329,7 +325,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // -------------------------------------
   // Sidebar Item with Hover
   // -------------------------------------
-  Widget _sidebarItem(IconData icon, String label, String id, {required bool collapsed}) {
+  Widget _sidebarItem(String iconPath, String label, String id, {required bool collapsed}) {
     final isHovered = hoveredSidebarItem == id;
 
     return MouseRegion(
@@ -348,10 +344,11 @@ class _ChatScreenState extends State<ChatScreen> {
             horizontal: collapsed ? 8 : 16,
             vertical: 4,
           ),
-          leading: Icon(
-            icon,
-            color: isHovered ? Colors.white : Colors.white.withOpacity(0.9),
-            size: 26,
+          leading: Image.asset(
+            iconPath,
+            width: 20,
+            height: 20,
+            color: isHovered ? Colors.white : Colors.white70,
           ),
           title: collapsed
               ? null
