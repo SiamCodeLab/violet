@@ -1,7 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
+import 'package:window_size/window_size.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    setWindowTitle('Violet App');
+    setWindowMinSize(const Size(800, 700)); // Set minimum size
+    setWindowFrame(Rect.fromLTWH(100, 100, 1000, 700)); // Set initial position and size
+  }
   runApp(const MyApp());
 }
 
