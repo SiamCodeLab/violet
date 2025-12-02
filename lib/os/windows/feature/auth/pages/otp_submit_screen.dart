@@ -51,6 +51,7 @@ class OtpSubmitScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 50),
                   SInputField(
+                    keyboardType: TextInputType.number,
                     labelText: 'OTP',
                     hintText: 'Enter the OTP sent to your email',
                   ),

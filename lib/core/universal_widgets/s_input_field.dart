@@ -6,9 +6,11 @@ class SInputField extends StatelessWidget {
   String labelText;
   String hintText;
   bool isSuffixIcon;
+  TextInputType keyboardType;
   SInputField({
     required this.labelText,
     required this.hintText,
+    required this.keyboardType,
     this.isSuffixIcon = false,
     super.key,
   });
@@ -45,6 +47,7 @@ class SInputField extends StatelessWidget {
                 ),
                 Expanded(
                   child: TextField(
+                    keyboardType: keyboardType,
                     obscureText: isObscureText.value,
                     decoration: InputDecoration(
                         border: OutlineInputBorder(

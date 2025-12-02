@@ -24,6 +24,62 @@ class _ChatsScreenState extends State<ChatsScreen> {
         'message': 'I need help with my account.',
       },
       {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
+        'sender': 'bot',
+        'message': 'I need help with my account.',
+      },
+      {
         'sender': 'user',
         'message': 'Sure, what seems to be the problem?',
       },
@@ -62,128 +118,127 @@ class _ChatsScreenState extends State<ChatsScreen> {
             fit: BoxFit.cover,
           )
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(top: 100, bottom: 20),
-                itemCount: chat.length,
-                itemBuilder: (context, index) {
-                  final message = chat[index];
-                  final isUser = message['sender'] == 'user';
-                  return SizedBox(
-                    width: 300,
-                    child: Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Column(
-                        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            child: Text(
-                              isUser ? 'You' : 'Violet',
-                              textAlign: isUser ? TextAlign.right : TextAlign.left,
-                              style: TextStyle(
-                                color: Color(ThemeColor.borderColor),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+        child: Padding(
+
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(top: 100, bottom: 20),
+                  itemCount: chat.length,
+                  itemBuilder: (context, index) {
+                    final message = chat[index];
+                    final isUser = message['sender'] == 'user';
+                    return SizedBox(
+                      width: 300,
+                      child: Align(
+                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: Text(
+                                isUser ? 'You' : 'Violet',
+                                textAlign: isUser ? TextAlign.right : TextAlign.left,
+                                style: TextStyle(
+                                  color: Color(ThemeColor.borderColor),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white. withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white. withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Text(
+                                message['message']!,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              message['message']!,
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    ),
-                  );
-                },
-              ),
-            ),
-            _buildFloatingInput(),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(ThemeColor.hintColor),
-                  fontSize: 12,
+                          ],
+                        )
+                      ),
+                    );
+                  },
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              _buildFloatingInput(),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(ThemeColor.hintColor),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         )
       ),
     );
   }
 
   Widget _buildFloatingInput() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 26),
-                    onPressed: () {},
-                  ),
-
-                  Expanded(
-                    child: TextField(
-                      // controller: _messageController,
-                      // focusNode: _messageFocusNode,
-                      decoration: const InputDecoration(
-                        hintText: "Type your message...",
-                        border: InputBorder.none,
-                      ),
-                      maxLines: null,
-                    ),
-                  ),
-
-                  IconButton(
-                    icon: const Icon(Icons.send_rounded, color: Color(ThemeColor.hintColor)),
-                    onPressed: () {
-                      // Handle send action
-                    },
-                  ),
-                ],
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 26),
+                onPressed: () {},
               ),
-            ),
+
+              Expanded(
+                child: TextField(
+                  // controller: _messageController,
+                  // focusNode: _messageFocusNode,
+                  decoration: const InputDecoration(
+                    hintText: "Type your message...",
+                    border: InputBorder.none,
+                  ),
+                  maxLines: null,
+                ),
+              ),
+
+              IconButton(
+                icon: const Icon(Icons.send_rounded, color: Color(ThemeColor.hintColor)),
+                onPressed: () {
+                  // Handle send action
+                },
+              ),
+            ],
           ),
         ),
       ),

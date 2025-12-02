@@ -39,11 +39,13 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 50),
                   SInputField(
+                    keyboardType: TextInputType.emailAddress,
                     labelText: 'Email',
                     hintText: 'Enter your email address',
                   ),
                   const SizedBox(height: 20),
                   SInputField(
+                    keyboardType: TextInputType.visiblePassword,
                     isSuffixIcon: true,
                     labelText: 'Password',
                     hintText: 'Enter your password',

@@ -59,6 +59,7 @@ class EmailSubmitScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 50),
                   SInputField(
+                    keyboardType: TextInputType.emailAddress,
                     labelText: 'Email',
                     hintText: 'Enter your email address',
                   ),

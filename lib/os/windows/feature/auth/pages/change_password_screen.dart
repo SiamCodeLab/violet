@@ -51,12 +51,14 @@ class ChangePasswordScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 50),
                   SInputField(
+                    keyboardType: TextInputType.visiblePassword,
                     isSuffixIcon: true,
                     labelText: 'Password',
                     hintText: 'Enter your new password',
                   ),
                   const SizedBox(height: 20),
                   SInputField(
+                    keyboardType: TextInputType.visiblePassword,
                     isSuffixIcon: true,
                     labelText: 'Confirm',
                     hintText: 'Re-enter your new password',
