@@ -15,6 +15,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? hoveredItem;
   String? hoveredSidebarItem;
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _chatScrollController = ScrollController();
+  final ScrollController _sidebarScrollController = ScrollController();
 
   // Store all chat sessions
   List<Map<String, dynamic>> chatSessions = [];
@@ -26,7 +28,22 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _messageController.dispose();
+    _chatScrollController.dispose();
+    _sidebarScrollController.dispose();
     super.dispose();
+  }
+
+  // Scroll to bottom of chat
+  void _scrollToBottom() {
+    if (_chatScrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _chatScrollController.animateTo(
+          _chatScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   @override
@@ -132,22 +149,29 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     )
-                        : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.only(bottom: 8, top: 4),
-                      itemCount: chatSessions.length,
-                      itemBuilder: (context, index) {
-                        final session = chatSessions[index];
-                        final isActive = currentChatIndex == index;
-                        return _sidebarHistoryItem(
-                          "history_$index",
-                          Icons.chat_bubble_outline,
-                          session['title'],
-                          isActive,
-                              () => _loadChatSession(index),
-                              () => _deleteChatSession(index),
-                        );
-                      },
+                        : Scrollbar(
+                      controller: _sidebarScrollController,
+                      thumbVisibility: true,
+                      thickness: 6,
+                      radius: Radius.circular(10),
+                      child: ListView.builder(
+                        controller: _sidebarScrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 8, top: 4, right: 8),
+                        itemCount: chatSessions.length,
+                        itemBuilder: (context, index) {
+                          final session = chatSessions[index];
+                          final isActive = currentChatIndex == index;
+                          return _sidebarHistoryItem(
+                            "history_$index",
+                            Icons.chat_bubble_outline,
+                            session['title'],
+                            isActive,
+                                () => _loadChatSession(index),
+                                () => _deleteChatSession(index),
+                          );
+                        },
+                      ),
                     ),
                   )
                 else
@@ -211,129 +235,146 @@ class _ChatScreenState extends State<ChatScreen> {
                   // Chat messages area
                   Expanded(
                     child: isChatEmpty
-                        ? Center(
+                        ? SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 900),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Logo and Title
-                              Column(
+                        constraints: BoxConstraints(
+                          minHeight: MediaQuery.of(context).size.height - 200,
+                        ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 900),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.deepPurple.withOpacity(0.2),
-                                          blurRadius: 20,
-                                          spreadRadius: 2,
+                                  // Logo and Title
+                                  Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.deepPurple.withOpacity(0.2),
+                                              blurRadius: 20,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                    child: CircleAvatar(
-                                      radius: 38,
-                                      backgroundColor: Color(ThemeColor.primary),
-                                      child: Icon(
-                                        Icons.favorite,
-                                        size: 40,
-                                        color: Colors.white,
+                                        child: CircleAvatar(
+                                          radius: 38,
+                                          backgroundColor: Color(ThemeColor.primary),
+                                          child: Icon(
+                                            Icons.favorite,
+                                            size: 40,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    "Ask Violet",
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(ThemeColor.primary),
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Your AI health companion",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Color(ThemeColor.primary).withOpacity(0.7),
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        "Ask Violet",
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(ThemeColor.primary),
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Your AI health companion",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Color(ThemeColor.primary).withOpacity(0.7),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     )
-                        : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: currentMessages.length,
-                      itemBuilder: (context, index) {
-                        final chat = currentMessages[index];
-                        final isUser = chat['sender'] == 'user';
-                        return Align(
-                          alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            padding: const EdgeInsets.all(16),
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isUser ? Color(ThemeColor.primary) : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 5,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (!isUser)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.favorite,
-                                          size: 16,
-                                          color: Color(ThemeColor.primary),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          "Violet",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
+                        : Scrollbar(
+                      controller: _chatScrollController,
+                      thumbVisibility: true,
+                      thickness: 8,
+                      radius: Radius.circular(10),
+                      child: ListView.builder(
+                        controller: _chatScrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                        itemCount: currentMessages.length,
+                        itemBuilder: (context, index) {
+                          final chat = currentMessages[index];
+                          final isUser = chat['sender'] == 'user';
+                          return Align(
+                            alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.all(16),
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.7,
+                                minWidth: 100,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isUser ? Color(ThemeColor.primary) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 5,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isUser)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.favorite,
+                                            size: 16,
                                             color: Color(ThemeColor.primary),
-                                            fontSize: 13,
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            "Violet",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(ThemeColor.primary),
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  SelectableText(
+                                    chat['message']!,
+                                    style: TextStyle(
+                                      color: isUser ? Colors.white : Colors.black87,
+                                      fontSize: 15,
+                                      height: 1.5,
                                     ),
                                   ),
-                                Text(
-                                  chat['message']!,
-                                  style: TextStyle(
-                                    color: isUser ? Colors.white : Colors.black87,
-                                    fontSize: 15,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
 
@@ -343,83 +384,104 @@ class _ChatScreenState extends State<ChatScreen> {
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                     ),
-                    child: Column(
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1200),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade300),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.add,
-                                    color: Color(ThemeColor.primary),
-                                    size: 26,
+                    child: SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1200),
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minHeight: 56,
+                                maxHeight: 200,
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 2),
                                   ),
-                                  tooltip: 'Add attachment',
-                                  onPressed: () {
-                                    // Add attachment logic here
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _messageController,
-                                    decoration: const InputDecoration(
-                                      hintText: "Type your message...",
-                                      hintStyle: TextStyle(color: Colors.grey),
-                                      border: InputBorder.none,
+                                ],
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.add,
+                                      color: Color(ThemeColor.primary),
+                                      size: 26,
                                     ),
-                                    style: const TextStyle(fontSize: 15),
-                                    maxLines: null,
-                                    textInputAction: TextInputAction.send,
-                                    onSubmitted: (_) => _sendMessage(),
+                                    tooltip: 'Add attachment',
+                                    onPressed: () {
+                                      // Add attachment logic here
+                                    },
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Color(ThemeColor.primary),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.send_rounded,
-                                      color: Colors.white,
-                                      size: 22,
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxHeight: 150,
+                                      ),
+                                      child: SingleChildScrollView(
+                                        child: TextField(
+                                          controller: _messageController,
+                                          decoration: const InputDecoration(
+                                            hintText: "Type your message...",
+                                            hintStyle: TextStyle(color: Colors.grey),
+                                            border: InputBorder.none,
+                                            isDense: true,
+                                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          style: const TextStyle(fontSize: 15),
+                                          maxLines: null,
+                                          keyboardType: TextInputType.multiline,
+                                          textInputAction: TextInputAction.newline,
+                                          onSubmitted: (_) => _sendMessage(),
+                                        ),
+                                      ),
                                     ),
-                                    tooltip: 'Send message',
-                                    onPressed: _sendMessage,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Color(ThemeColor.primary),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.send_rounded,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                      tooltip: 'Send message',
+                                      onPressed: _sendMessage,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                            height: 1.4,
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              "Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
+                                height: 1.4,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -449,17 +511,25 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
     });
 
+    // Scroll to bottom after user message
+    _scrollToBottom();
+
     // Simulate AI response after a short delay
     Future.delayed(const Duration(milliseconds: 800), () {
-      setState(() {
-        currentMessages.add({
-          'sender': 'violet',
-          'message': _generateAIResponse(userMessage),
+      if (mounted) {
+        setState(() {
+          currentMessages.add({
+            'sender': 'violet',
+            'message': _generateAIResponse(userMessage),
+          });
+
+          // Update or create chat session
+          _updateChatSession();
         });
 
-        // Update or create chat session
-        _updateChatSession();
-      });
+        // Scroll to bottom after AI response
+        _scrollToBottom();
+      }
     });
   }
 
@@ -542,6 +612,9 @@ class _ChatScreenState extends State<ChatScreen> {
       currentChatIndex = index;
       currentMessages = List.from(chatSessions[index]['messages']);
     });
+
+    // Scroll to bottom when loading a chat
+    _scrollToBottom();
   }
 
   // -------------------------------------
@@ -651,6 +724,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             onPressed: onDelete,
             tooltip: 'Delete chat',
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
           )
               : null,
           onTap: onTap,
