@@ -1,52 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:violet/core/theme/theme_color.dart';
 
 class SInputField extends StatelessWidget {
+  String labelText;
+  String hintText;
   bool isSuffixIcon;
   SInputField({
+    required this.labelText,
+    required this.hintText,
     this.isSuffixIcon = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+
+    RxBool isObscureText = false.obs;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color:  Color(ThemeColor.borderColor)),
       ),
-      child: Row(
-        children: [
-          Text('Username', style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            color: Colors.grey,
-          ),
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderSide: BorderSide.none,
+      child: Obx(
+          (){
+            return Row(
+              children: [
+                SizedBox(
+                  width: 100,
+                  child: Text(labelText, style: TextStyle(
+                    color: Color(ThemeColor.hintColor),
+                    fontSize: 16,
+                    ),
+                  ),
                 ),
-                hintText: 'Enter your username',
-                hintStyle: TextStyle(
-                  color: Colors.grey,
-                )
-              ),
-            ),
-          ),
-          if (isSuffixIcon)
-            Icon(
-              Icons.remove_red_eye,
-              color: Colors.grey,
-            ),
-        ],
+                Container(
+                  width: 1,
+                  height: 24,
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  color: Color(ThemeColor.hintColor),
+                ),
+                Expanded(
+                  child: TextField(
+                    obscureText: isObscureText.value,
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                        ),
+                        hintText: hintText,
+                        hintStyle: TextStyle(
+                          color:  Color(ThemeColor.hintColor),
+                        )
+                    ),
+                  ),
+                ),
+                if (isSuffixIcon)
+                  GestureDetector(
+                    onTap: (){
+                      isObscureText.value = !isObscureText.value;
+                    },
+                    child: Icon(
+                      isObscureText.value ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                  ),
+              ],
+            );
+          }
       ),
     );
   }

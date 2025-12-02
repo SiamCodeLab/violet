@@ -25,7 +25,7 @@ class EmailSubmitScreen extends StatelessWidget {
           },
         ),
       ),
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: Color(ThemeColor.backgroundColor),
       body: SafeArea(
         child: Center(
           child: SizedBox(
@@ -39,7 +39,7 @@ class EmailSubmitScreen extends StatelessWidget {
                   width: 200,
                 ),
                 const Text(
-                  'Log in to continue',
+                  'Reset your password',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
@@ -47,14 +47,17 @@ class EmailSubmitScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'Enter your email to receive an OTP',
+                  'OTP will be send to your mail',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 24,
                     color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 50),
-                SInputField(),
+                SInputField(
+                  labelText: 'Email',
+                  hintText: 'Enter your email address',
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

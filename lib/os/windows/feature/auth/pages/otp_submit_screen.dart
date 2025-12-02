@@ -25,7 +25,7 @@ class OtpSubmitScreen extends StatelessWidget {
           },
         ),
       ),
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: Color(ThemeColor.backgroundColor),
       body: SafeArea(
         child: Center(
           child: SizedBox(
@@ -39,14 +39,17 @@ class OtpSubmitScreen extends StatelessWidget {
                   width: 200,
                 ),
                 const Text(
-                  'Log in to continue',
+                  'Enter verification code',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 50),
-                SInputField(),
+                SInputField(
+                  labelText: 'OTP',
+                  hintText: 'Enter the OTP sent to your email',
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

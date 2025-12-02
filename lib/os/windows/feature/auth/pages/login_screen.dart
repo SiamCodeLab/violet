@@ -12,7 +12,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: Color(ThemeColor.backgroundColor),
       body: SafeArea(
         child: Center(
           child: SizedBox(
@@ -33,10 +33,15 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 50),
-                SInputField(),
+                SInputField(
+                  labelText: 'Email',
+                  hintText: 'Enter your email address',
+                ),
                 const SizedBox(height: 20),
                 SInputField(
                   isSuffixIcon: true,
+                  labelText: 'Password',
+                  hintText: 'Enter your password',
                 ),
                 const SizedBox(height: 10  ),
                 Row(
@@ -92,21 +97,6 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
-                Text.rich(
-                  TextSpan(
-                    text: "Don't have an account? ",
-                    children: [
-                      TextSpan(
-                        text: 'Sign Up',
-                        style: TextStyle(
-                          color: Color(ThemeColor.primary),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
               ],
             ),
           ),

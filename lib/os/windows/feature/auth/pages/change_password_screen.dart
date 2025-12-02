@@ -25,7 +25,7 @@ class ChangePasswordScreen extends StatelessWidget {
           },
         ),
       ),
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: Color(ThemeColor.backgroundColor),
       body: SafeArea(
         child: Center(
           child: SizedBox(
@@ -39,7 +39,7 @@ class ChangePasswordScreen extends StatelessWidget {
                   width: 200,
                 ),
                 const Text(
-                  'Log in to continue',
+                  'Enter new password',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
@@ -48,10 +48,14 @@ class ChangePasswordScreen extends StatelessWidget {
                 const SizedBox(height: 50),
                 SInputField(
                   isSuffixIcon: true,
+                  labelText: 'Password',
+                  hintText: 'Enter your new password',
                 ),
                 const SizedBox(height: 20),
                 SInputField(
                   isSuffixIcon: true,
+                  labelText: 'Confirm',
+                  hintText: 'Re-enter your new password',
                 ),
                 const SizedBox(height: 20),
                 SizedBox(

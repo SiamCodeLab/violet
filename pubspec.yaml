@@ -21,6 +21,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   window_size: ^0.1.0
 
+  # State management
+  get: ^4.7.3
+
+  # file picker
+  image_picker: ^1.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -41,4 +47,5 @@ flutter:
       - assets/images/
       - assets/images/branding/
       - assets/icons/
+      - assets/icons/future_icon/
 
