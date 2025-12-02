@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
+import 'package:violet/os/windows/feature/chat/chats_screen.dart';
 import 'package:window_size/window_size.dart';
 
 void main() {

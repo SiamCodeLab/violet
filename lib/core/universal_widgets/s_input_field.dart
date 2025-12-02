@@ -17,6 +17,7 @@ class SInputField extends StatelessWidget {
   Widget build(BuildContext context) {
 
     RxBool isObscureText = false.obs;
+    bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -29,7 +30,7 @@ class SInputField extends StatelessWidget {
             return Row(
               children: [
                 SizedBox(
-                  width: 100,
+                  width: isAndroid ? 80 : 150,
                   child: Text(labelText, style: TextStyle(
                     color: Color(ThemeColor.hintColor),
                     fontSize: 16,

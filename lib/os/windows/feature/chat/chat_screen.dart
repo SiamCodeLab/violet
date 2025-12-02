@@ -17,33 +17,31 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
   final ScrollController _sidebarScrollController = ScrollController();
+  final FocusNode _messageFocusNode = FocusNode();
 
-  // Store all chat sessions
   List<Map<String, dynamic>> chatSessions = [];
   int? currentChatIndex;
-
-  // Current chat messages
   List<Map<String, String>> currentMessages = [];
+  bool isLoading = false;
 
   @override
   void dispose() {
     _messageController.dispose();
     _chatScrollController.dispose();
     _sidebarScrollController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
-  // Scroll to bottom of chat
   void _scrollToBottom() {
-    if (_chatScrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _chatScrollController.animateTo(
-          _chatScrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
-    }
+    if (!mounted || !_chatScrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _chatScrollController.animateTo(
+        _chatScrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   @override
@@ -51,179 +49,13 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isChatEmpty = currentMessages.isEmpty;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Row(
         children: [
-          // ----------------------------------------
-          // COLLAPSIBLE SIDEBAR
-          // ----------------------------------------
+          _buildSideBar(),
 
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            width: isCollapsed ? 70 : 250,
-            decoration: BoxDecoration(
-              color: Color(ThemeColor.primary),
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 25),
-
-                // Collapse Button
-                Padding(
-                  padding: EdgeInsets.only(left: isCollapsed ? 10 : 16,),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: Image.asset(
-                        PathStrings.menuIcon,
-                        width: 20,
-                        height: 20,
-                        color: Colors.white,
-                      ),
-                      tooltip: isCollapsed ? 'Expand menu' : 'Collapse menu',
-                      onPressed: () {
-                        setState(() => isCollapsed = !isCollapsed);
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Sidebar Items
-                _sidebarItem(
-                    PathStrings.homeIcon,
-                    "Home", "home",
-                        () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
-                      );
-                    },
-                    collapsed: isCollapsed
-                ),
-                _sidebarItem(
-                    PathStrings.newIcon,
-                    "New Chat", "new_chat",
-                        () {
-                      _startNewChat();
-                    },
-                    collapsed: isCollapsed),
-
-                const SizedBox(height: 8),
-
-                // Chat history title
-                if (!isCollapsed)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Chat History",
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Chat history list
-                if (!isCollapsed)
-                  Expanded(
-                    child: chatSessions.isEmpty
-                        ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          "No chat history yet",
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 13,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                        : Scrollbar(
-                      controller: _sidebarScrollController,
-                      thumbVisibility: true,
-                      thickness: 6,
-                      radius: Radius.circular(10),
-                      child: ListView.builder(
-                        controller: _sidebarScrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 8, top: 4, right: 8),
-                        itemCount: chatSessions.length,
-                        itemBuilder: (context, index) {
-                          final session = chatSessions[index];
-                          final isActive = currentChatIndex == index;
-                          return _sidebarHistoryItem(
-                            "history_$index",
-                            Icons.chat_bubble_outline,
-                            session['title'],
-                            isActive,
-                                () => _loadChatSession(index),
-                                () => _deleteChatSession(index),
-                          );
-                        },
-                      ),
-                    ),
-                  )
-                else
-                  const Spacer(),
-
-                const SizedBox(height: 10),
-
-                // Logout Button
-                if (!isCollapsed)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Add sign out logic here
-                      },
-                      icon: const Icon(Icons.logout, size: 20),
-                      label: const Text(
-                        "Sign out",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Color(ThemeColor.primary),
-                        minimumSize: const Size(double.infinity, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 2,
-                      ),
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: IconButton(
-                      icon: const Icon(Icons.logout, color: Colors.white, size: 26),
-                      tooltip: 'Sign out',
-                      onPressed: () {
-                        // Add sign out logic here
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // ----------------------------------------
-          // MAIN CONTENT AREA
-          // ----------------------------------------
           Expanded(
             child: Container(
-              width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage('assets/images/bg.jpg'),
@@ -232,258 +64,10 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               child: Column(
                 children: [
-                  // Chat messages area
                   Expanded(
-                    child: isChatEmpty
-                        ? SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: MediaQuery.of(context).size.height - 200,
-                        ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 900),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Logo and Title
-                                  Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.deepPurple.withOpacity(0.2),
-                                              blurRadius: 20,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                        child: CircleAvatar(
-                                          radius: 38,
-                                          backgroundColor: Color(ThemeColor.primary),
-                                          child: Icon(
-                                            Icons.favorite,
-                                            size: 40,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 20),
-                                      Text(
-                                        "Ask Violet",
-                                        style: TextStyle(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(ThemeColor.primary),
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        "Your AI health companion",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Color(ThemeColor.primary).withOpacity(0.7),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                        : Scrollbar(
-                      controller: _chatScrollController,
-                      thumbVisibility: true,
-                      thickness: 8,
-                      radius: Radius.circular(10),
-                      child: ListView.builder(
-                        controller: _chatScrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                        itemCount: currentMessages.length,
-                        itemBuilder: (context, index) {
-                          final chat = currentMessages[index];
-                          final isUser = chat['sender'] == 'user';
-                          return Align(
-                            alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              padding: const EdgeInsets.all(16),
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.7,
-                                minWidth: 100,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isUser ? Color(ThemeColor.primary) : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 5,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (!isUser)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.favorite,
-                                            size: 16,
-                                            color: Color(ThemeColor.primary),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            "Violet",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(ThemeColor.primary),
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  SelectableText(
-                                    chat['message']!,
-                                    style: TextStyle(
-                                      color: isUser ? Colors.white : Colors.black87,
-                                      fontSize: 15,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                    child: isChatEmpty ? _buildEmptyState() : _buildChatMessages(),
                   ),
-
-                  // Bottom Input Section
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                    ),
-                    child: SafeArea(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1200),
-                            child: Container(
-                              constraints: const BoxConstraints(
-                                minHeight: 56,
-                                maxHeight: 200,
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey.shade300),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.add,
-                                      color: Color(ThemeColor.primary),
-                                      size: 26,
-                                    ),
-                                    tooltip: 'Add attachment',
-                                    onPressed: () {
-                                      // Add attachment logic here
-                                    },
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxHeight: 150,
-                                      ),
-                                      child: SingleChildScrollView(
-                                        child: TextField(
-                                          controller: _messageController,
-                                          decoration: const InputDecoration(
-                                            hintText: "Type your message...",
-                                            hintStyle: TextStyle(color: Colors.grey),
-                                            border: InputBorder.none,
-                                            isDense: true,
-                                            contentPadding: EdgeInsets.symmetric(vertical: 12),
-                                          ),
-                                          style: const TextStyle(fontSize: 15),
-                                          maxLines: null,
-                                          keyboardType: TextInputType.multiline,
-                                          textInputAction: TextInputAction.newline,
-                                          onSubmitted: (_) => _sendMessage(),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Color(ThemeColor.primary),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.send_rounded,
-                                        color: Colors.white,
-                                        size: 22,
-                                      ),
-                                      tooltip: 'Send message',
-                                      onPressed: _sendMessage,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Text(
-                              "Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 11,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildFloatingInput(),
                 ],
               ),
             ),
@@ -493,150 +77,354 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // -------------------------------------
-  // Send Message Handler
-  // -------------------------------------
+  // ================= SIDEBAR =================
+
+  Widget _buildSideBar() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: isCollapsed ? 70 : 250,
+      color: Color(ThemeColor.primary),
+      child: Column(
+        children: [
+          const SizedBox(height: 25),
+
+          Padding(
+            padding: EdgeInsets.only(left: isCollapsed ? 10 : 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                icon: Image.asset(
+                  PathStrings.menuIcon,
+                  width: 20,
+                  height: 20,
+                  color: Colors.white,
+                ),
+                onPressed: () => setState(() => isCollapsed = !isCollapsed),
+              ),
+            ),
+          ),
+
+          _sidebarItem(PathStrings.homeIcon, "Home", "home", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          }, collapsed: isCollapsed),
+
+          _sidebarItem(PathStrings.newIcon, "New Chat", "new_chat", () {
+            _startNewChat();
+          }, collapsed: isCollapsed),
+
+          const SizedBox(height: 8),
+
+          if (!isCollapsed)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text("Chat History",
+                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ),
+
+          if (!isCollapsed)
+            Expanded(
+              child: chatSessions.isEmpty
+                  ? Center(
+                  child: Text("No chat history yet",
+                      style: TextStyle(color: Colors.white54, fontSize: 13)))
+                  : ListView.builder(
+                  controller: _sidebarScrollController,
+                  itemCount: chatSessions.length,
+                  itemBuilder: (_, index) {
+                    final session = chatSessions[index];
+                    final isActive = currentChatIndex == index;
+
+                    return _sidebarHistoryItem(
+                      "history_$index",
+                      Icons.chat_bubble_outline,
+                      session['title'],
+                      isActive,
+                          () => _loadChatSession(index),
+                          () => _deleteChatSession(index),
+                    );
+                  }),
+            )
+        ],
+      ),
+    );
+  }
+
+  // ================= EMPTY STATE =================
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 38,
+            backgroundColor: Color(ThemeColor.primary),
+            child: Icon(Icons.favorite, size: 40, color: Colors.white),
+          ),
+          const SizedBox(height: 20),
+          Text("Ask Violet",
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(ThemeColor.primary))),
+          const SizedBox(height: 8),
+          Text("Your AI health companion",
+              style: TextStyle(fontSize: 16, color: Color(ThemeColor.primary).withOpacity(0.7))),
+        ],
+      ),
+    );
+  }
+
+  // ================= CHAT LIST =================
+
+  Widget _buildChatMessages() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: ListView.builder(
+          controller: _chatScrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          itemCount: currentMessages.length + (isLoading ? 1 : 0),
+          itemBuilder: (_, index) {
+            if (index == currentMessages.length && isLoading) {
+              return _loadingBubble();
+            }
+
+            final chat = currentMessages[index];
+            final isUser = chat['sender'] == 'user';
+
+            return Align(
+              alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment:
+                isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  Text(isUser ? "You" : "Violet",
+                      style: TextStyle(color: Colors.grey, fontSize: 12)),
+
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.all(16),
+
+                    // 🔥 80% message bubble
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.80,
+                      minWidth: 100,
+                    ),
+
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 5,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: SelectableText(
+                      chat['message']!,
+                      style: TextStyle(fontSize: 15, height: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _loadingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.favorite, size: 16, color: Color(ThemeColor.primary)),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(ThemeColor.primary),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text("Violet is thinking...",
+                style: TextStyle(color: Colors.grey, fontSize: 14)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= FLOATING INPUT =================
+
+  Widget _buildFloatingInput() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 26),
+                    onPressed: () {},
+                  ),
+
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      focusNode: _messageFocusNode,
+                      decoration: const InputDecoration(
+                        hintText: "Type your message...",
+                        border: InputBorder.none,
+                      ),
+                      maxLines: null,
+                    ),
+                  ),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isLoading ? Colors.grey : Color(ThemeColor.primary),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.send_rounded, color: Colors.white),
+                      onPressed: isLoading ? null : _sendMessage,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================= MESSAGE LOGIC =================
+
   void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+    if (_messageController.text.trim().isEmpty || isLoading) return;
 
     final userMessage = _messageController.text.trim();
 
     setState(() {
-      // Add user message
-      currentMessages.add({
-        'sender': 'user',
-        'message': userMessage,
-      });
-
+      currentMessages.add({'sender': 'user', 'message': userMessage});
+      isLoading = true;
       _messageController.clear();
     });
 
-    // Scroll to bottom after user message
     _scrollToBottom();
 
-    // Simulate AI response after a short delay
     Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        setState(() {
-          currentMessages.add({
-            'sender': 'violet',
-            'message': _generateAIResponse(userMessage),
-          });
-
-          // Update or create chat session
-          _updateChatSession();
+      setState(() {
+        currentMessages.add({
+          'sender': 'violet',
+          'message': _generateAIResponse(userMessage),
         });
+        isLoading = false;
+        _updateChatSession();
+      });
 
-        // Scroll to bottom after AI response
-        _scrollToBottom();
-      }
+      _scrollToBottom();
+      _messageFocusNode.requestFocus();
     });
   }
 
-  // -------------------------------------
-  // Generate AI Response (Simulated)
-  // -------------------------------------
-  String _generateAIResponse(String userMessage) {
-    final lowerMessage = userMessage.toLowerCase();
-
-    if (lowerMessage.contains('fitness') || lowerMessage.contains('exercise') || lowerMessage.contains('workout')) {
-      return 'To improve your fitness routine, consider incorporating a mix of cardio and strength training, setting realistic goals, and maintaining a balanced diet. Would you like specific workout recommendations?';
-    } else if (lowerMessage.contains('diet') || lowerMessage.contains('food') || lowerMessage.contains('eat')) {
-      return 'A balanced diet is key to good health! Focus on whole foods, plenty of fruits and vegetables, lean proteins, and stay hydrated. What are your specific dietary goals?';
-    } else if (lowerMessage.contains('sleep') || lowerMessage.contains('rest')) {
-      return 'Quality sleep is essential for health. Aim for 7-9 hours per night, maintain a consistent schedule, avoid screens before bed, and create a relaxing bedtime routine.';
-    } else if (lowerMessage.contains('stress') || lowerMessage.contains('anxiety')) {
-      return 'Managing stress is important for overall wellbeing. Try meditation, deep breathing exercises, regular physical activity, and ensure you have time for activities you enjoy.';
-    } else if (lowerMessage.contains('hello') || lowerMessage.contains('hi')) {
-      return 'Hello! I\'m Violet, your AI health companion. How can I help you with your health and wellness today?';
-    } else {
-      return 'I understand your question about health and wellness. As your AI companion, I\'m here to provide general guidance. For specific medical advice, please consult with a healthcare professional. How else can I assist you?';
-    }
+  String _generateAIResponse(String msg) {
+    final m = msg.toLowerCase();
+    if (m.contains('fitness')) return "Try mixing cardio and strength.";
+    if (m.contains('diet')) return "Eat whole foods and stay hydrated.";
+    if (m.contains('sleep')) return "Aim for 7–9 hours of sleep.";
+    if (m.contains('stress')) return "Try meditation and deep breathing.";
+    if (m.contains('hello') || m.contains('hi')) return "Hello! I'm Violet.";
+    return "I'm here to help!";
   }
 
-  // -------------------------------------
-  // Start New Chat
-  // -------------------------------------
   void _startNewChat() {
+    if (isLoading) return;
     setState(() {
-      // Save current chat if it has messages
-      if (currentMessages.isNotEmpty && currentChatIndex == null) {
-        _updateChatSession();
-      }
-
       currentMessages = [];
       currentChatIndex = null;
     });
+    _messageFocusNode.requestFocus();
   }
 
-  // -------------------------------------
-  // Update Chat Session
-  // -------------------------------------
   void _updateChatSession() {
     if (currentMessages.isEmpty) return;
 
-    // Get title from first user message
-    final firstUserMessage = currentMessages.firstWhere(
+    final firstUserMsg = currentMessages.firstWhere(
           (msg) => msg['sender'] == 'user',
       orElse: () => {'message': 'New Chat'},
     );
 
-    String title = firstUserMessage['message']!;
-    if (title.length > 30) {
-      title = '${title.substring(0, 30)}...';
-    }
+    String title = firstUserMsg['message']!;
+    if (title.length > 30) title = "${title.substring(0, 30)}...";
 
     if (currentChatIndex != null) {
-      // Update existing session
       chatSessions[currentChatIndex!] = {
         'title': title,
         'messages': List.from(currentMessages),
-        'timestamp': DateTime.now(),
       };
     } else {
-      // Create new session
       chatSessions.insert(0, {
         'title': title,
         'messages': List.from(currentMessages),
-        'timestamp': DateTime.now(),
       });
       currentChatIndex = 0;
     }
   }
 
-  // -------------------------------------
-  // Load Chat Session
-  // -------------------------------------
   void _loadChatSession(int index) {
     setState(() {
       currentChatIndex = index;
       currentMessages = List.from(chatSessions[index]['messages']);
     });
-
-    // Scroll to bottom when loading a chat
     _scrollToBottom();
   }
 
-  // -------------------------------------
-  // Delete Chat Session
-  // -------------------------------------
   void _deleteChatSession(int index) {
     setState(() {
       chatSessions.removeAt(index);
-
       if (currentChatIndex == index) {
         currentMessages = [];
         currentChatIndex = null;
-      } else if (currentChatIndex != null && currentChatIndex! > index) {
-        currentChatIndex = currentChatIndex! - 1;
       }
     });
   }
 
-  // -------------------------------------
-  // Sidebar Item with Hover
-  // -------------------------------------
-  Widget _sidebarItem(String iconPath, String label, String id, VoidCallback onTap, {required bool collapsed}) {
+  // ================= ITEM BUILDER =================
+
+  Widget _sidebarItem(String iconPath, String label, String id, VoidCallback onTap,
+      {required bool collapsed}) {
     final isHovered = hoveredSidebarItem == id;
 
     return MouseRegion(
@@ -651,43 +439,20 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         child: ListTile(
           minLeadingWidth: 20,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: collapsed ? 8 : 16,
-            vertical: 4,
-          ),
-          leading: Image.asset(
-            iconPath,
-            width: 20,
-            height: 20,
-            color: isHovered ? Colors.white : Colors.white70,
-          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: collapsed ? 8 : 16),
+          leading: Image.asset(iconPath,
+              width: 20, height: 20, color: Colors.white.withOpacity(isHovered ? 1 : 0.8)),
           title: collapsed
               ? null
-              : Text(
-            label,
-            style: TextStyle(
-              color: isHovered ? Colors.white : Colors.white.withOpacity(0.9),
-              fontSize: 15,
-              fontWeight: isHovered ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
+              : Text(label, style: TextStyle(color: Colors.white, fontSize: 15)),
           onTap: onTap,
         ),
       ),
     );
   }
 
-  // -------------------------------------
-  // Chat History Item with Hover Effect
-  // -------------------------------------
   Widget _sidebarHistoryItem(
-      String id,
-      IconData icon,
-      String label,
-      bool isActive,
-      VoidCallback onTap,
-      VoidCallback onDelete,
-      ) {
+      String id, IconData icon, String label, bool isActive, VoidCallback onTap, VoidCallback onDelete) {
     final isHovered = hoveredItem == id;
 
     return MouseRegion(
@@ -697,35 +462,19 @@ class _ChatScreenState extends State<ChatScreen> {
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: isActive
-              ? Colors.white.withOpacity(0.2)
-              : (isHovered ? Colors.white.withOpacity(0.15) : Colors.transparent),
+          color: isActive ? Colors.white24 : (isHovered ? Colors.white12 : Colors.transparent),
           borderRadius: BorderRadius.circular(8),
         ),
         child: ListTile(
-          minLeadingWidth: 20,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          title: Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.white : (isHovered ? Colors.white : Colors.white70),
-              fontSize: 14,
-              fontWeight: isActive ? FontWeight.w600 : (isHovered ? FontWeight.w500 : FontWeight.normal),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          title: Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.white, fontSize: 14)),
           trailing: isHovered
               ? IconButton(
-            icon: Icon(
-              Icons.delete_outline,
-              color: Colors.white70,
-              size: 18,
-            ),
+            icon: const Icon(Icons.delete_outline, color: Colors.white70),
             onPressed: onDelete,
-            tooltip: 'Delete chat',
             padding: EdgeInsets.zero,
-            constraints: BoxConstraints(),
           )
               : null,
           onTap: onTap,
