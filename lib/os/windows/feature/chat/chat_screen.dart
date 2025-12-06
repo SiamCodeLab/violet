@@ -149,7 +149,37 @@ class _ChatScreenState extends State<ChatScreen> {
                           () => _deleteChatSession(index),
                     );
                   }),
-            )
+            ),
+          (!isCollapsed)
+              ? Align(
+                alignment: AlignmentGeometry.bottomLeft,
+                child: GestureDetector(
+                            onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                            },
+                            child: Container(
+                width: 150,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      PathStrings.logoutIcon,
+                      width: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text("Sign out",
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15)),
+                  ],              ),
+                            ),
+                          ),
+              )
+              : SizedBox.shrink(),
         ],
       ),
     );
@@ -166,7 +196,7 @@ class _ChatScreenState extends State<ChatScreen> {
             image: AssetImage(widget.initialQuery),
             width: 150,
           ),
-          Text(widget.title,
+          Text('Ask Violet',
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.normal, color: Colors.black)),
         ],
       ),
@@ -298,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 26),
+                        icon: Icon(Icons.add, color: Color(ThemeColor.borderColor), size: 26),
                         onPressed: () {},
                       ),
                 
@@ -313,28 +343,24 @@ class _ChatScreenState extends State<ChatScreen> {
                           maxLines: null,
                         ),
                       ),
-                
-                      Container(
-                        decoration: BoxDecoration(
-                          color: isLoading ? Colors.grey : Color(ThemeColor.primary),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.send_rounded, color: Colors.white),
-                          onPressed: isLoading ? null : _sendMessage,
-                        ),
+
+                      IconButton(
+                        icon: const Icon(Icons.send_rounded, color: Color(ThemeColor.hintColor)),
+                        onPressed: () {
+                          _sendMessage();
+                        },
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 10),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 48),
                   child: Text(
                     'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: (MediaQuery.of(context).size.width * 0.016).clamp(12.0, 20.0),
+                      fontSize: (MediaQuery.of(context).size.width * 0.016).clamp(12.0, 18.0),
                       color: Colors.grey[600],
                     ),
                   ),

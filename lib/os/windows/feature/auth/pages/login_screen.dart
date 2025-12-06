@@ -25,11 +25,12 @@ class LoginScreen extends StatelessWidget {
             horizontal: isAndroid ? 20 : 100,
             vertical: isAndroid ? 20 : 50,
           ),
-          child: Center(
+          child: Align(
+            alignment: isAndroid ? Alignment.topCenter : Alignment.center,
             child: SizedBox(
               width: 650,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: isAndroid ? MainAxisAlignment.start : MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   AuthLogo(isAndroid: isAndroid),

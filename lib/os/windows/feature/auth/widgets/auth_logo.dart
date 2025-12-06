@@ -13,7 +13,7 @@ class AuthLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       PathStrings.logoPath,
-      width: isAndroid ? 100 : 200,
+      width: isAndroid ? 150 : 200,
     );
   }
 }
