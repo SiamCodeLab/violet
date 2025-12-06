@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  String initialQuery;
+  String title;
+  ChatScreen({super.key, required this.initialQuery, required this.title});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -159,17 +162,12 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 38,
-            backgroundColor: Color(ThemeColor.primary),
-            child: Icon(Icons.favorite, size: 40, color: Colors.white),
+          Image(
+            image: AssetImage(widget.initialQuery),
+            width: 150,
           ),
-          const SizedBox(height: 20),
-          Text("Ask Violet",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(ThemeColor.primary))),
-          const SizedBox(height: 8),
-          Text("Your AI health companion",
-              style: TextStyle(fontSize: 16, color: Color(ThemeColor.primary).withOpacity(0.7))),
+          Text(widget.title,
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.normal, color: Colors.black)),
         ],
       ),
     );
@@ -195,40 +193,49 @@ class _ChatScreenState extends State<ChatScreen> {
 
             return Align(
               alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-              child: Column(
-                crossAxisAlignment:
-                isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  Text(isUser ? "You" : "Violet",
-                      style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 800),
+                child: Column(
+                  crossAxisAlignment:
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    Text(isUser ? "You" : "Violet",
+                        style: TextStyle(color: Colors.grey, fontSize: 12)),
 
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(16),
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.all(16),
 
-                    // 🔥 80% message bubble
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.80,
-                      minWidth: 100,
-                    ),
+                      // 🔥 80% message bubble
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.80,
+                        minWidth: 100,
+                      ),
 
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(9),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 5,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(9),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: SelectableText(
+                        chat['message']!,
+                        style: TextStyle(fontSize: 15, height: 1.5),
+                      ),
                     ),
-                    child: SelectableText(
-                      chat['message']!,
-                      style: TextStyle(fontSize: 15, height: 1.5),
-                    ),
-                  ),
-                ],
+                    ?isUser ? null : IconButton(
+                      icon: Icon(Icons.copy_rounded, size: 20, color: Colors.black),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: chat['message'].toString()));
+                      },
+                    )
+                  ],
+                ),
               ),
             );
           },
@@ -243,21 +250,16 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white, width: 2)
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.favorite, size: 16, color: Color(ThemeColor.primary)),
-            const SizedBox(width: 8),
-            SizedBox(
+            Image.asset(
+              'assets/icons/ai_loading.png',
               width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Color(ThemeColor.primary),
-              ),
             ),
             const SizedBox(width: 8),
             Text("Violet is thinking...",
@@ -277,51 +279,67 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1200),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 26),
-                    onPressed: () {},
-                  ),
-
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      focusNode: _messageFocusNode,
-                      decoration: const InputDecoration(
-                        hintText: "Type your message...",
-                        border: InputBorder.none,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
-                      maxLines: null,
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 26),
+                        onPressed: () {},
+                      ),
+                
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          focusNode: _messageFocusNode,
+                          decoration: const InputDecoration(
+                            hintText: "Type your message...",
+                            border: InputBorder.none,
+                          ),
+                          maxLines: null,
+                        ),
+                      ),
+                
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isLoading ? Colors.grey : Color(ThemeColor.primary),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.send_rounded, color: Colors.white),
+                          onPressed: isLoading ? null : _sendMessage,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                  child: Text(
+                    'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: (MediaQuery.of(context).size.width * 0.016).clamp(12.0, 20.0),
+                      color: Colors.grey[600],
                     ),
                   ),
-
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isLoading ? Colors.grey : Color(ThemeColor.primary),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Colors.white),
-                      onPressed: isLoading ? null : _sendMessage,
-                    ),
-                  ),
-                ],
-              ),
+                )
+              ],
             ),
           ),
         ),

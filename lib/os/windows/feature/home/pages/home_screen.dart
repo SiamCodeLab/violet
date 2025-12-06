@@ -55,7 +55,7 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Image.asset(
                         PathStrings.logoPath,
-                        width: 150,
+                        width: isAndroid() ? 150 : 200,
                       ),
                       const SizedBox(height: 40),
 
@@ -91,61 +91,63 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 50),
+                  LayoutBuilder(builder: (context, subConstraints) {
+                    final int crossCount = subConstraints.maxWidth > 800 ? 5 : 3;
+                    const double spacing = 20.0;
+                    final double itemWidth =
+                        (subConstraints.maxWidth - (crossCount - 1) * spacing) / crossCount;
 
-                      LayoutBuilder(builder: (context, subConstraints) {
-                        return LayoutBuilder(builder: (context, subConstraints) {
-                          final int crossCount = subConstraints.maxWidth > 800 ? 5 : 3;
-                          const double spacing = 20.0;
-                          final double itemWidth =
-                              (subConstraints.maxWidth - (crossCount - 1) * spacing) / crossCount;
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: List.generate(demoData.length, (index) {
+                        final item = demoData[index];
+                        return SizedBox(
+                          width: itemWidth,
+                          height: itemWidth, // keep square tiles
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => isAndroid() ? ChatsScreen(
+                                    initialQuery: item['image'],
 
-                          return Wrap(
-                            spacing: spacing,
-                            runSpacing: spacing,
-                            alignment: WrapAlignment.center,
-                            children: List.generate(demoData.length, (index) {
-                              final item = demoData[index];
-                              return SizedBox(
-                                width: itemWidth,
-                                height: itemWidth, // keep square tiles
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => isAndroid() ? ChatsScreen() : ChatScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(9),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Image.asset(
-                                        item['image'],
-                                        fit: BoxFit.contain,
-                                        width: double.infinity,
-                                      ),
-                                    ),
+                                  ) : ChatScreen(
+                                    initialQuery: item['image'],
+                                    title: item['title'],
                                   ),
                                 ),
                               );
-                            }),
-                          );
-                        });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(9),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Image.asset(
+                                  item['image'],
+                                  fit: BoxFit.contain,
+                                  width: 150,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
                       }),
-
-                      const SizedBox(height: 200),
+                    );
+                  }),
+                      const SizedBox(height: 50),
 
                       SizedBox(
                         width: 1000,
@@ -158,7 +160,6 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
