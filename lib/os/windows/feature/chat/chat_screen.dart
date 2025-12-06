@@ -87,103 +87,138 @@ class _ChatScreenState extends State<ChatScreen> {
       duration: const Duration(milliseconds: 300),
       width: isCollapsed ? 70 : 250,
       color: Color(ThemeColor.primary),
-      child: Column(
-        children: [
-          const SizedBox(height: 25),
 
-          Padding(
-            padding: EdgeInsets.only(left: isCollapsed ? 10 : 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: IconButton(
-                icon: Image.asset(
-                  PathStrings.menuIcon,
-                  width: 20,
-                  height: 20,
-                  color: Colors.white,
+      // Prevent internal widgets from reflowing during animation
+      child: ClipRect(
+        child: OverflowBox(
+          maxWidth: 250,
+          minWidth: 70,
+          alignment: Alignment.centerLeft,
+
+          child: SizedBox(
+            width: isCollapsed ? 70 : 250,
+            child: Column(
+              children: [
+                const SizedBox(height: 25),
+
+                Padding(
+                  padding: EdgeInsets.only(left: isCollapsed ? 10 : 16),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: Image.asset(
+                        PathStrings.menuIcon,
+                        width: 20,
+                        height: 20,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => setState(() => isCollapsed = !isCollapsed),
+                    ),
+                  ),
                 ),
-                onPressed: () => setState(() => isCollapsed = !isCollapsed),
-              ),
+
+                _sidebarItem(PathStrings.homeIcon, "Home", "home", () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  );
+                }, collapsed: isCollapsed),
+
+                _sidebarItem(PathStrings.newIcon, "New Chat", "new_chat", () {
+                  _startNewChat();
+                }, collapsed: isCollapsed),
+
+                const SizedBox(height: 8),
+
+                // Chat History Title
+                if (!isCollapsed)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Chat History",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Chat List
+                if (!isCollapsed)
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _sidebarScrollController,
+                      itemCount: chatSessions.length,
+                      itemBuilder: (_, index) {
+                        final session = chatSessions[index];
+                        final isActive = currentChatIndex == index;
+
+                        return _sidebarHistoryItem(
+                          "history_$index",
+                          Icons.chat_bubble_outline,
+                          session['title'],
+                          isActive,
+                              () => _loadChatSession(index),
+                              () => _deleteChatSession(index),
+                        );
+                      },
+                    ),
+                  )
+                else
+                  Expanded(child: SizedBox()),
+
+                // 🔥 Logout Button (Stable, No Wrapping, No Jumps)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      );
+                    },
+                    child: Container(
+                      height: 45,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            PathStrings.logoutIcon,
+                            width: 18,
+                          ),
+                          if (!isCollapsed) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              "Sign out",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-
-          _sidebarItem(PathStrings.homeIcon, "Home", "home", () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          }, collapsed: isCollapsed),
-
-          _sidebarItem(PathStrings.newIcon, "New Chat", "new_chat", () {
-            _startNewChat();
-          }, collapsed: isCollapsed),
-
-          const SizedBox(height: 8),
-
-          if (!isCollapsed)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text("Chat History",
-                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-              ),
-            ),
-
-          if (!isCollapsed)
-            Expanded(
-              child: chatSessions.isEmpty
-                  ? Center(
-                  child: Text("No chat history yet",
-                      style: TextStyle(color: Colors.white54, fontSize: 13)))
-                  : ListView.builder(
-                  controller: _sidebarScrollController,
-                  itemCount: chatSessions.length,
-                  itemBuilder: (_, index) {
-                    final session = chatSessions[index];
-                    final isActive = currentChatIndex == index;
-
-                    return _sidebarHistoryItem(
-                      "history_$index",
-                      Icons.chat_bubble_outline,
-                      session['title'],
-                      isActive,
-                          () => _loadChatSession(index),
-                          () => _deleteChatSession(index),
-                    );
-                  }),
-            ),
-          (!isCollapsed)
-              ? Align(
-                alignment: AlignmentGeometry.bottomLeft,
-                child: GestureDetector(
-                            onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-                            },
-                            child: Container(
-                width: 150,
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      PathStrings.logoutIcon,
-                      width: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text("Sign out",
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15)),
-                  ],              ),
-                            ),
-                          ),
-              )
-              : SizedBox.shrink(),
-        ],
+        ),
       ),
     );
   }
+
+
 
   // ================= EMPTY STATE =================
 
