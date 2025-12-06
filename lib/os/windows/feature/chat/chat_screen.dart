@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
+import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -178,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     },
                     child: Container(
