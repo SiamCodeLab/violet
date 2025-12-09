@@ -233,7 +233,7 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 150,
           ),
           Text('Ask Violet',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.normal, color: Colors.black)),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.normal, color: Colors.grey[600])),
         ],
       ),
     );

@@ -63,7 +63,7 @@ class HomeScreen extends StatelessWidget {
                         'Violet supports person-centred care, making every moment truly count.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: isAndroid() ? 24 : 32,
+                          fontSize: isAndroid() ? 20 : 32,
                           fontWeight: FontWeight.w400,
                           color: Color(ThemeColor.primary),
                         ),
@@ -74,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                         'How would you like Violet to help you?',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: isAndroid() ? 20 : 28,
+                          fontSize: isAndroid() ? 16 : 28,
                           fontWeight: FontWeight.w400,
                           color: Color(ThemeColor.primary),
                         ),
@@ -85,17 +85,25 @@ class HomeScreen extends StatelessWidget {
                         'Choose one of the functions below or simply click Ask Violet ',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: isAndroid() ? 16 : 20,
+                          fontSize: isAndroid() ? 14 : 20,
                           fontWeight: FontWeight.w500,
                           color: Color(ThemeColor.primary),
                         ),
                       ),
                       const SizedBox(height: 50),
                   LayoutBuilder(builder: (context, subConstraints) {
-                    final int crossCount = subConstraints.maxWidth > 800 ? 5 : 3;
-                    const double spacing = 20.0;
-                    final double itemWidth =
-                        (subConstraints.maxWidth - (crossCount - 1) * spacing) / crossCount;
+                  final int crossCount;
+                  if (subConstraints.maxWidth > 800) {
+                    crossCount = 5;
+                  } else if (subConstraints.maxWidth > 450) {
+                    crossCount = 3;
+                  } else {
+                    // Phone view — use 2 columns to make tiles larger
+                    crossCount = 2;
+                  }
+                  final double spacing = subConstraints.maxWidth <= 450 ? 25.0 : 20.0;
+                  final double itemWidth =
+                      (subConstraints.maxWidth - (crossCount - 1) * spacing) / crossCount;
 
                     return Wrap(
                       spacing: spacing,
