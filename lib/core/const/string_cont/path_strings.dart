@@ -1,8 +1,5 @@
 class PathStrings {
-
-
   static const String logoPath = 'assets/images/branding/logo.png';
-
 
   // icons
   static const String menuIcon = 'assets/icons/menu.png';
@@ -10,6 +7,14 @@ class PathStrings {
   static const String newIcon = 'assets/icons/new.png';
   static const String logoutIcon = 'assets/icons/logout.png';
   static const String mobileMenuIcon = 'assets/icons/mobile_menu.png';
+
+  // Loading Icon icons
+  static const String trainginIcon = 'assets/icons/loading_icon/edu.png';
+  static const String askVioletIcon = "assets/icons/loading_icon/chat.png";
+  static const String activitiesIcon =
+      "assets/icons/loading_icon/activities.png";
+  static const String chatIcon = "assets/icons/loading_icon/love.png";
+  static const String policyIcon = "assets/icons/loading_icon/plicy.png";
 
   // Future icons
   static const String askViolet = 'assets/icons/future_icon/ask_violet.png';
@@ -20,5 +25,4 @@ class PathStrings {
 
   // Bg
   static const String phoneBg = 'assets/images/phone_bg.jpg';
-
 }

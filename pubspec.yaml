@@ -58,4 +58,5 @@ flutter:
       - assets/images/branding/
       - assets/icons/
       - assets/icons/future_icon/
+      - assets/icons/loading_icon/
 

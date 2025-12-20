@@ -3,12 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
+import 'package:violet/os/windows/feature/chat/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 class ChatScreen extends StatefulWidget {
-  String initialQuery;
-  String title;
-  ChatScreen({super.key, required this.initialQuery, required this.title});
+  final String initialQuery;
+  final String loadingIcon;
+  final String title;
+  const ChatScreen({
+    super.key,
+    required this.initialQuery,
+    required this.title,
+    required this.loadingIcon,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -69,7 +76,9 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Column(
                 children: [
                   Expanded(
-                    child: isChatEmpty ? _buildEmptyState() : _buildChatMessages(),
+                    child: isChatEmpty
+                        ? _buildEmptyState()
+                        : _buildChatMessages(),
                   ),
                   _buildFloatingInput(),
                 ],
@@ -113,7 +122,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         height: 20,
                         color: Colors.white,
                       ),
-                      onPressed: () => setState(() => isCollapsed = !isCollapsed),
+                      onPressed: () =>
+                          setState(() => isCollapsed = !isCollapsed),
                     ),
                   ),
                 ),
@@ -134,7 +144,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 // Chat History Title
                 if (!isCollapsed)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -163,8 +176,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           Icons.chat_bubble_outline,
                           session['title'],
                           isActive,
-                              () => _loadChatSession(index),
-                              () => _deleteChatSession(index),
+                          () => _loadChatSession(index),
+                          () => _deleteChatSession(index),
                         );
                       },
                     ),
@@ -191,10 +204,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset(
-                            PathStrings.logoutIcon,
-                            width: 18,
-                          ),
+                          Image.asset(PathStrings.logoutIcon, width: 18),
                           if (!isCollapsed) ...[
                             const SizedBox(width: 8),
                             Text(
@@ -219,23 +229,22 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-
-
   // ================= EMPTY STATE =================
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image(
-            image: AssetImage(widget.initialQuery),
-            width: 150,
-          ),
-          Text('Ask Violet',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.normal, color: Colors.grey[600])),
-        ],
-      ),
+    return Column(
+      children: [
+        SizedBox(height: 120),
+        Image(image: AssetImage(widget.initialQuery), width: 150),
+        // Text(
+        //   'Ask Violet',
+        //   style: TextStyle(
+        //     fontSize: 26,
+        //     fontWeight: FontWeight.normal,
+        //     color: Colors.grey[600],
+        //   ),
+        // ),
+      ],
     );
   }
 
@@ -262,11 +271,14 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 800),
                 child: Column(
-                  crossAxisAlignment:
-                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isUser
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
-                    Text(isUser ? "You" : "Violet",
-                        style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(
+                      isUser ? "You" : "Violet",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
 
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -294,12 +306,20 @@ class _ChatScreenState extends State<ChatScreen> {
                         style: TextStyle(fontSize: 15, height: 1.5),
                       ),
                     ),
-                    ?isUser ? null : IconButton(
-                      icon: Icon(Icons.copy_rounded, size: 20, color: Colors.black),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: chat['message'].toString()));
-                      },
-                    )
+                    ?isUser
+                        ? null
+                        : IconButton(
+                            icon: Icon(
+                              Icons.copy_rounded,
+                              size: 20,
+                              color: Colors.black,
+                            ),
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(text: chat['message'].toString()),
+                              );
+                            },
+                          ),
                   ],
                 ),
               ),
@@ -318,18 +338,14 @@ class _ChatScreenState extends State<ChatScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white, width: 2)
+          border: Border.all(color: Colors.white, width: 2),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              'assets/icons/ai_loading.png',
-              width: 20,
-            ),
+            Image.asset(widget.loadingIcon, width: 15),
             const SizedBox(width: 8),
-            Text("Violet is thinking...",
-                style: TextStyle(color: Colors.grey, fontSize: 14)),
+            AnimatedThinkingText(),
           ],
         ),
       ),
@@ -348,7 +364,10 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
@@ -364,24 +383,43 @@ class _ChatScreenState extends State<ChatScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.add, color: Color(ThemeColor.borderColor), size: 26),
+                        icon: Icon(
+                          Icons.add,
+                          color: Color(ThemeColor.borderColor),
+                          size: 26,
+                        ),
                         onPressed: () {},
                       ),
-                
+
                       Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          focusNode: _messageFocusNode,
-                          decoration: const InputDecoration(
-                            hintText: "Type your message...",
-                            border: InputBorder.none,
+                        child: Focus(
+                          onKeyEvent: (FocusNode node, KeyEvent event) {
+                            // Enter pressed without Shift = send message
+                            if (event is KeyDownEvent &&
+                                event.logicalKey == LogicalKeyboardKey.enter &&
+                                !HardwareKeyboard.instance.isShiftPressed) {
+                              _sendMessage();
+                              return KeyEventResult.handled; // Prevent new line
+                            }
+                            return KeyEventResult.ignored; // Allow other keys
+                          },
+                          child: TextField(
+                            controller: _messageController,
+                            focusNode: _messageFocusNode,
+                            decoration: const InputDecoration(
+                              hintText: "Type your message...",
+                              border: InputBorder.none,
+                            ),
+                            maxLines: null,
                           ),
-                          maxLines: null,
                         ),
                       ),
 
                       IconButton(
-                        icon: const Icon(Icons.send_rounded, color: Color(ThemeColor.hintColor)),
+                        icon: const Icon(
+                          Icons.send_rounded,
+                          color: Color(ThemeColor.hintColor),
+                        ),
                         onPressed: () {
                           _sendMessage();
                         },
@@ -396,11 +434,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: (MediaQuery.of(context).size.width * 0.016).clamp(12.0, 18.0),
+                      fontSize: (MediaQuery.of(context).size.width * 0.016)
+                          .clamp(12.0, 18.0),
                       color: Colors.grey[600],
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -441,12 +480,34 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _generateAIResponse(String msg) {
     final m = msg.toLowerCase();
-    if (m.contains('fitness')) return "Try mixing cardio and strength.";
-    if (m.contains('diet')) return "Eat whole foods and stay hydrated.";
-    if (m.contains('sleep')) return "Aim for 7–9 hours of sleep.";
-    if (m.contains('stress')) return "Try meditation and deep breathing.";
-    if (m.contains('hello') || m.contains('hi')) return "Hello! I'm Violet.";
-    return "I'm here to help!";
+    if (m.contains('fitness')) {
+      return "Try mixing cardio and strength training for best results.";
+    }
+    if (m.contains('diet')) {
+      return "Focus on whole foods and stay hydrated throughout the day.";
+    }
+    if (m.contains('sleep')) {
+      return "Aim for 7–9 hours of quality sleep each night.";
+    }
+    if (m.contains('stress')) {
+      return "Try meditation, deep breathing, or a short walk.";
+    }
+    if (m.contains('hello') || m.contains('hi')) {
+      return "Hello! I'm Violet. How can I help you today?";
+    }
+    if (m.contains('care')) {
+      return "Person-centred care focuses on individual needs and preferences.";
+    }
+    if (m.contains('training')) {
+      return "We have various training resources available for care staff.";
+    }
+    if (m.contains('activity') || m.contains('activities')) {
+      return "Activities should be tailored to each resident's interests and abilities.";
+    }
+    if (m.contains('policy')) {
+      return "I can help you understand care home policies and regulations.";
+    }
+    return "I'm here to help with care-related questions!";
   }
 
   void _startNewChat() {
@@ -462,7 +523,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (currentMessages.isEmpty) return;
 
     final firstUserMsg = currentMessages.firstWhere(
-          (msg) => msg['sender'] == 'user',
+      (msg) => msg['sender'] == 'user',
       orElse: () => {'message': 'New Chat'},
     );
 
@@ -503,8 +564,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // ================= ITEM BUILDER =================
 
-  Widget _sidebarItem(String iconPath, String label, String id, VoidCallback onTap,
-      {required bool collapsed}) {
+  Widget _sidebarItem(
+    String iconPath,
+    String label,
+    String id,
+    VoidCallback onTap, {
+    required bool collapsed,
+  }) {
     final isHovered = hoveredSidebarItem == id;
 
     return MouseRegion(
@@ -514,17 +580,26 @@ class _ChatScreenState extends State<ChatScreen> {
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: isHovered ? Colors.white.withOpacity(0.15) : Colors.transparent,
+          color: isHovered
+              ? Colors.white.withOpacity(0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: ListTile(
           minLeadingWidth: 20,
           contentPadding: EdgeInsets.symmetric(horizontal: collapsed ? 8 : 16),
-          leading: Image.asset(iconPath,
-              width: 20, height: 20, color: Colors.white.withOpacity(isHovered ? 1 : 0.8)),
+          leading: Image.asset(
+            iconPath,
+            width: 20,
+            height: 20,
+            color: Colors.white.withOpacity(isHovered ? 1 : 0.8),
+          ),
           title: collapsed
               ? null
-              : Text(label, style: TextStyle(color: Colors.white, fontSize: 15)),
+              : Text(
+                  label,
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
           onTap: onTap,
         ),
       ),
@@ -532,7 +607,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _sidebarHistoryItem(
-      String id, IconData icon, String label, bool isActive, VoidCallback onTap, VoidCallback onDelete) {
+    String id,
+    IconData icon,
+    String label,
+    bool isActive,
+    VoidCallback onTap,
+    VoidCallback onDelete,
+  ) {
     final isHovered = hoveredItem == id;
 
     return MouseRegion(
@@ -542,20 +623,24 @@ class _ChatScreenState extends State<ChatScreen> {
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white24 : (isHovered ? Colors.white12 : Colors.transparent),
+          color: isActive
+              ? Colors.white24
+              : (isHovered ? Colors.white12 : Colors.transparent),
           borderRadius: BorderRadius.circular(8),
         ),
         child: ListTile(
-          title: Text(label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
           trailing: isHovered
               ? IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white70),
-            onPressed: onDelete,
-            padding: EdgeInsets.zero,
-          )
+                  icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                  onPressed: onDelete,
+                  padding: EdgeInsets.zero,
+                )
               : null,
           onTap: onTap,
         ),
