@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:violet/core/const/string_cont/path_strings.dart';
+import 'package:get/get.dart';
 import 'package:violet/core/theme/theme_color.dart';
-import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
+import 'package:violet/core/utils/console.dart';
+import 'package:violet/os/windows/feature/auth/controller/login_controller.dart';
 
 import '../../../../../core/universal_widgets/s_input_field.dart';
 import '../widgets/auth_logo.dart';
@@ -10,11 +10,12 @@ import '../widgets/auth_title.dart';
 import 'email_submit_screen.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  LoginScreen({super.key});
+
+  final LoginController _controller = Get.put(LoginController());
 
   @override
   Widget build(BuildContext context) {
-
     bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
 
     return Scaffold(
@@ -30,36 +31,40 @@ class LoginScreen extends StatelessWidget {
             child: SizedBox(
               width: 650,
               child: Column(
-                mainAxisAlignment: isAndroid ? MainAxisAlignment.start : MainAxisAlignment.center,
+                mainAxisAlignment: isAndroid
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   AuthLogo(isAndroid: isAndroid),
-                  AuthTitle(
-                      isAndroid: isAndroid,
-                      title: 'Log in to continue ',
-                  ),
+                  AuthTitle(isAndroid: isAndroid, title: 'Log in to continue '),
                   const SizedBox(height: 50),
                   SInputField(
+                    controller: _controller.loginEmailController,
                     keyboardType: TextInputType.emailAddress,
                     labelText: 'Email',
                     hintText: 'Enter your email address',
                   ),
                   const SizedBox(height: 20),
                   SInputField(
+                    controller: _controller.loginPasswordController,
                     keyboardType: TextInputType.visiblePassword,
                     isSuffixIcon: true,
                     labelText: 'Password',
                     hintText: 'Enter your password',
                   ),
-                  const SizedBox(height: 10  ),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      Checkbox(
-                        activeColor: Color(ThemeColor.primary),
-                        value: true,
-                        onChanged: (value) {},
+                      Obx(
+                        () => Checkbox(
+                          activeColor: Color(ThemeColor.primary),
+                          value: _controller.rememberMe.value,
+                          onChanged: (value) => _controller.toggleRememberMe(),
+                        ),
                       ),
-                      const Text('Remember me',
+                      const Text(
+                        'Remember me',
                         style: TextStyle(
                           color: Color(ThemeColor.primary),
                           fontSize: 16,
@@ -75,13 +80,14 @@ class LoginScreen extends StatelessWidget {
                             ),
                           );
                         },
-                        child: const Text('Forgot Password?',
-                        style: TextStyle(
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(
                             color: Color(ThemeColor.primary),
                             fontSize: 16,
                           ),
-                        )
-                      )
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -90,13 +96,8 @@ class LoginScreen extends StatelessWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                        );
-
+                        Console.info(_controller.loginEmailController.text);
+                        _controller.signIn();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(ThemeColor.primary),
@@ -106,10 +107,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                       child: const Text(
                         'Login',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ),

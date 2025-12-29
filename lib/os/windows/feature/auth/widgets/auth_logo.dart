@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:violet/core/const/string_cont/path_strings.dart';
+import 'package:violet/core/const/path_strings.dart';
 
 class AuthLogo extends StatelessWidget {
   const AuthLogo({

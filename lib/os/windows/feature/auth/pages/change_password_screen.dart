@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
@@ -13,7 +11,6 @@ class ChangePasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
 
     return Scaffold(
@@ -21,10 +18,7 @@ class ChangePasswordScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -42,14 +36,13 @@ class ChangePasswordScreen extends StatelessWidget {
             child: SizedBox(
               width: 650,
               child: Column(
-                mainAxisAlignment: isAndroid ? MainAxisAlignment.start : MainAxisAlignment.center,
+                mainAxisAlignment: isAndroid
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   AuthLogo(isAndroid: isAndroid),
-                  AuthTitle(
-                    isAndroid: isAndroid,
-                    title: 'Enter New Password',
-                  ),
+                  AuthTitle(isAndroid: isAndroid, title: 'Enter New Password'),
                   const SizedBox(height: 50),
                   SInputField(
                     keyboardType: TextInputType.visiblePassword,
@@ -85,10 +78,7 @@ class ChangePasswordScreen extends StatelessWidget {
                       ),
                       child: const Text(
                         'Send OTP',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ),
@@ -101,4 +91,3 @@ class ChangePasswordScreen extends StatelessWidget {
     );
   }
 }
-

@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 
 import '../../../../../core/universal_widgets/s_input_field.dart';

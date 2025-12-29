@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:violet/core/const/string_cont/path_strings.dart';
+import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
@@ -192,7 +192,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        MaterialPageRoute(builder: (_) => LoginScreen()),
                       );
                     },
                     child: Container(

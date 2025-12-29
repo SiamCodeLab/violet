@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:violet/core/const/string_cont/path_strings.dart';
+import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/chats_screen.dart';
 import '../../chat/chat_screen.dart';
