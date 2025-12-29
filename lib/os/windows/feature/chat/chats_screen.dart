@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:violet/core/const/string_cont/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
-import 'package:violet/os/windows/feature/chat/animated_thinking_text.dart';
+import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 class ChatsScreen extends StatefulWidget {
