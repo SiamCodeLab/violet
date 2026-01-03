@@ -4,6 +4,7 @@ import 'package:get/route_manager.dart';
 import 'package:get/state_manager.dart';
 import 'package:violet/core/const/api_endpoint.dart';
 import 'package:violet/core/services/api_service.dart';
+import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
@@ -49,11 +50,15 @@ class LoginController extends GetxService {
           refreshToken: data['refresh'],
         );
         Console.success('User signed in successfully');
+        SnackbarService.success('User signed in successfully');
         // Navigate to Home
         Get.to(() => HomeScreen());
         isLoading.value = false;
+      } else {
+        isLoading.value = false;
+        SnackbarService.error('Error: ${response.data['detail']}');
+        Console.error('Error: ${response.data['detail']}');
       }
-      
     } catch (e) {
       isLoading.value = false;
       Console.error('Sign In Error: $e');
@@ -67,16 +72,19 @@ class LoginController extends GetxService {
     if (loginEmailController.text.trim().isEmpty) {
       errorMessageSignIn.value = 'Please enter your email';
       Console.error('Please enter your email');
+      SnackbarService.error('Please enter your email');
       return false;
     }
     if (!GetUtils.isEmail(loginEmailController.text.trim())) {
       errorMessageSignIn.value = 'Please enter a valid email';
       Console.error('Please enter a valid email');
+      SnackbarService.error('Please enter a valid email');
       return false;
     }
     if (loginPasswordController.text.isEmpty) {
       errorMessageSignIn.value = 'Please enter your password';
       Console.error('Please enter your password');
+      SnackbarService.error('Please enter your password');
       return false;
     }
     return true;

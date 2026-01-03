@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:violet/core/theme/theme_color.dart';
+import 'package:violet/os/windows/feature/auth/controller/email_submit_controller.dart';
 
 import '../../../../../core/universal_widgets/s_input_field.dart';
 import '../widgets/auth_logo.dart';
 import '../widgets/auth_title.dart';
-import 'otp_submit_screen.dart';
 
 class EmailSubmitScreen extends StatelessWidget {
-  const EmailSubmitScreen({super.key});
+  EmailSubmitScreen({super.key});
+
+  final EmailSubmitController _controller = Get.put(EmailSubmitController());
 
   @override
   Widget build(BuildContext context) {
-
     bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
 
     return Scaffold(
@@ -19,10 +21,7 @@ class EmailSubmitScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -40,14 +39,13 @@ class EmailSubmitScreen extends StatelessWidget {
             child: SizedBox(
               width: 650,
               child: Column(
-                mainAxisAlignment: isAndroid ? MainAxisAlignment.start : MainAxisAlignment.center,
+                mainAxisAlignment: isAndroid
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   AuthLogo(isAndroid: isAndroid),
-                  AuthTitle(
-                    isAndroid: isAndroid,
-                    title: 'Reset your password',
-                  ),
+                  AuthTitle(isAndroid: isAndroid, title: 'Reset your password'),
                   const SizedBox(height: 10),
                   Text(
                     'OTP will be send to your mail',
@@ -58,6 +56,7 @@ class EmailSubmitScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 50),
                   SInputField(
+                    controller: _controller.email,
                     keyboardType: TextInputType.emailAddress,
                     labelText: 'Email',
                     hintText: 'Enter your email address',
@@ -67,14 +66,7 @@ class EmailSubmitScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const OtpSubmitScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: () => _controller.sendOtp(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(ThemeColor.primary),
                         shape: RoundedRectangleBorder(
@@ -83,10 +75,7 @@ class EmailSubmitScreen extends StatelessWidget {
                       ),
                       child: const Text(
                         'Send OTP',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ),
@@ -99,4 +88,3 @@ class EmailSubmitScreen extends StatelessWidget {
     );
   }
 }
-

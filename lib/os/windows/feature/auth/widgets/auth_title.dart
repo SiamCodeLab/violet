@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 
 class AuthTitle extends StatelessWidget {
   String title;
-  AuthTitle({
-    super.key,
-    required this.isAndroid,
-    required this.title,
-  });
+  AuthTitle({super.key, required this.isAndroid, required this.title});
 
   final bool isAndroid;
 
@@ -21,5 +17,3 @@ class AuthTitle extends StatelessWidget {
     );
   }
 }
-
-
