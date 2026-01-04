@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/chats_screen.dart';
-import '../../chat/chat_screen.dart';
+import '../../chat/desktop_view_chat_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,26 +13,31 @@ class HomeScreen extends StatelessWidget {
     // menu items - each card has title, bg image, and icon for loading state
     final List<Map<String, dynamic>> demoData = [
       {
+        'bot_id': 1,
         'title': 'Ask Violet',
         'image': PathStrings.askViolet,
         'icon': PathStrings.askVioletIcon,
       },
       {
+        'bot_id': 2,
         'title': 'Care Planning',
         'image': PathStrings.carePlanning,
         'icon': PathStrings.chatIcon,
       },
       {
+        'bot_id': 3,
         'title': 'Training Resources',
         'image': PathStrings.training,
         'icon': PathStrings.trainginIcon,
       },
       {
+        'bot_id': 4,
         'title': 'Activities Ideas',
         'image': PathStrings.activities,
         'icon': PathStrings.activitiesIcon,
       },
       {
+        'bot_id': 5,
         'title': 'Policy Guidance',
         'image': PathStrings.policy,
         'icon': PathStrings.policyIcon,
@@ -303,18 +309,15 @@ class HomeScreen extends StatelessWidget {
                                   ? itemWidth - 48
                                   : itemWidth - 48,
                               child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ChatScreen(
-                                        initialQuery: item['image'],
-                                        title: item['title'],
-                                        loadingIcon: item['icon'],
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onTap: () => Get.to(
+                                  () => DesktopViewChatScreen(
+                                    initialQuery: item['image'],
+                                    title: item['title'],
+                                    loadingIcon: item['icon'],
+                                    botid: item['bot_id'],
+                                  ),
+                                  arguments: item['bot_id'],
+                                ),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
@@ -396,17 +399,14 @@ class HomeScreen extends StatelessWidget {
       width: cardSize,
       height: cardSize,
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatsScreen(
-                initialQuery: item['image'],
-                loadingIcon: item['icon'],
-              ),
-            ),
-          );
-        },
+        onTap: () => Get.to(
+          () => ChatsScreen(
+            initialQuery: item['image'],
+            loadingIcon: item['icon'],
+            botid: item['bot_id'],
+          ),
+          arguments: item['bot_id'],
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,

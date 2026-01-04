@@ -30,7 +30,7 @@ class EmailSubmitController extends GetxService {
         Get.to(() => OtpSubmitScreen(), arguments: email.text.trim());
       } else if (response.statusCode == 400) {
         isLoading.value = false;
-        SnackbarService.error('Error: ${response.data['email']}');
+        SnackbarService.error('Error: ${response.data['email'][0]}');
         errorMessage.value = response.data['email'];
         Console.error('Error: ${response.data['email']}');
       }

@@ -2,13 +2,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
+import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
+import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 import 'package:window_size/window_size.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await StorageService.init();
+  Console.info(StorageService.getAccessToken());
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowTitle('Violet App');
@@ -33,6 +36,9 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  Widget get initialRoute =>
+      StorageService.hasValidToken() ? HomeScreen() : LoginScreen();
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -43,7 +49,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
-      home: LoginScreen(),
+      home: initialRoute,
     );
   }
 }

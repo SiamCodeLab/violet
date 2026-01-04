@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:violet/core/theme/theme_color.dart';
+import 'package:violet/os/windows/feature/auth/controller/change_password_controller.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 import '../../../../../core/universal_widgets/s_input_field.dart';
@@ -7,7 +9,11 @@ import '../widgets/auth_logo.dart';
 import '../widgets/auth_title.dart';
 
 class ChangePasswordScreen extends StatelessWidget {
-  const ChangePasswordScreen({super.key});
+  ChangePasswordScreen({super.key});
+
+  final ChangePasswordController _controller = Get.put(
+    ChangePasswordController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +51,7 @@ class ChangePasswordScreen extends StatelessWidget {
                   AuthTitle(isAndroid: isAndroid, title: 'Enter New Password'),
                   const SizedBox(height: 50),
                   SInputField(
+                    controller: _controller.password,
                     keyboardType: TextInputType.visiblePassword,
                     isSuffixIcon: true,
                     labelText: 'Password',
@@ -52,6 +59,7 @@ class ChangePasswordScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   SInputField(
+                    controller: _controller.confirmPassword,
                     keyboardType: TextInputType.visiblePassword,
                     isSuffixIcon: true,
                     labelText: 'Confirm',
@@ -62,14 +70,7 @@ class ChangePasswordScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: () => _controller.changePassword(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(ThemeColor.primary),
                         shape: RoundedRectangleBorder(

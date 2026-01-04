@@ -49,6 +49,7 @@ class LoginController extends GetxService {
           accessToken: data['access'],
           refreshToken: data['refresh'],
         );
+        Console.info(data['access']);
         Console.success('User signed in successfully');
         SnackbarService.success('User signed in successfully');
         // Navigate to Home

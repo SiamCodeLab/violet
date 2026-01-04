@@ -175,7 +175,7 @@ class ApiService {
   /// POST form data with authentication
   static Future<ApiResponse<dynamic>> postFormAuth(
     String url, {
-    required Map<String, String> body,
+    required Map<String, dynamic> body,
   }) async {
     try {
       Console.api('POST Form (Auth): $url');
@@ -349,6 +349,7 @@ class ApiService {
           data['message'] ??
           data['detail'] ??
           data['error'] ??
+          data['non_field_errors'] ??
           'Request failed';
     }
 

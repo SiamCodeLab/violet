@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
+import 'controller/chat_controller.dart' show ChatController;
+
 class ChatsScreen extends StatefulWidget {
   final dynamic initialQuery;
   final String loadingIcon;
+  final int botid;
 
   const ChatsScreen({
     super.key,
     required this.initialQuery,
     required this.loadingIcon,
+    required this.botid,
   });
 
   @override
@@ -28,8 +33,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
   // chat data
   List<Map<String, dynamic>> chatSessions = [];
   int? currentChatIndex;
-  List<Map<String, String>> currentMessages = [];
+  List<Map<String, dynamic>> currentMessages = [];
   bool isLoading = false;
+
+  final ChatController _controller = Get.put(ChatController());
 
   @override
   void dispose() {
@@ -52,7 +59,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isChatEmpty = currentMessages.isEmpty;
+    bool isChatEmpty = _controller.currentMessages.isEmpty;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -121,10 +128,12 @@ class _ChatsScreenState extends State<ChatsScreen> {
     return ListView.builder(
       controller: _chatScrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      itemCount: currentMessages.length + (isLoading ? 1 : 0),
+      itemCount:
+          _controller.currentMessages.length +
+          (_controller.isLoading.value ? 1 : 0),
       itemBuilder: (_, index) {
         // loading bubble at the end
-        if (index == currentMessages.length && isLoading) {
+        if (index == _controller.currentMessages.length && isLoading) {
           return _loadingBubble();
         }
 
@@ -273,7 +282,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
           ),
           Expanded(
             child: TextField(
-              controller: _messageController,
+              controller: _controller.messageController,
               focusNode: _messageFocusNode,
               decoration: const InputDecoration(
                 hintText: "Type your message...",
@@ -282,12 +291,12 @@ class _ChatsScreenState extends State<ChatsScreen> {
               ),
               maxLines: null,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
+              onSubmitted: (_) => _controller.sendMessage(),
             ),
           ),
           IconButton(
             icon: Icon(Icons.send_rounded, color: Color(ThemeColor.hintColor)),
-            onPressed: _sendMessage,
+            onPressed: _controller.sendMessage,
           ),
         ],
       ),
@@ -296,58 +305,58 @@ class _ChatsScreenState extends State<ChatsScreen> {
 
   // ================= MESSAGE LOGIC =================
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty || isLoading) return;
+  // void _sendMessage() {
+  //   if (_messageController.text.trim().isEmpty || isLoading) return;
 
-    final userMessage = _messageController.text.trim();
+  //   final userMessage = _messageController.text.trim();
 
-    setState(() {
-      currentMessages.add({'sender': 'user', 'message': userMessage});
-      isLoading = true;
-      _messageController.clear();
-    });
+  //   setState(() {
+  //     currentMessages.add({'sender': 'user', 'message': userMessage});
+  //     isLoading = true;
+  //     _messageController.clear();
+  //   });
 
-    _scrollToBottom();
+  //   _scrollToBottom();
 
-    // fake delay for AI response
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() {
-        currentMessages.add({
-          'sender': 'violet',
-          'message': _generateAIResponse(userMessage),
-        });
-        isLoading = false;
-        _updateChatSession();
-      });
+  //   // fake delay for AI response
+  //   Future.delayed(const Duration(milliseconds: 800), () {
+  //     if (!mounted) return;
+  //     setState(() {
+  //       currentMessages.add({
+  //         'sender': 'violet',
+  //         'message': _generateAIResponse(userMessage),
+  //       });
+  //       isLoading = false;
+  //       _updateChatSession();
+  //     });
 
-      _scrollToBottom();
-      _messageFocusNode.requestFocus();
-    });
-  }
+  //     _scrollToBottom();
+  //     _messageFocusNode.requestFocus();
+  //   });
+  // }
 
-  String _generateAIResponse(String msg) {
-    final m = msg.toLowerCase();
-    if (m.contains('fitness'))
-      return "Try mixing cardio and strength training for best results.";
-    if (m.contains('diet'))
-      return "Focus on whole foods and stay hydrated throughout the day.";
-    if (m.contains('sleep'))
-      return "Aim for 7–9 hours of quality sleep each night.";
-    if (m.contains('stress'))
-      return "Try meditation, deep breathing, or a short walk.";
-    if (m.contains('hello') || m.contains('hi'))
-      return "Hello! I'm Violet. How can I help you today?";
-    if (m.contains('care'))
-      return "Person-centred care focuses on individual needs and preferences.";
-    if (m.contains('training'))
-      return "We have various training resources available for care staff.";
-    if (m.contains('activity') || m.contains('activities'))
-      return "Activities should be tailored to each resident's interests and abilities.";
-    if (m.contains('policy'))
-      return "I can help you understand care home policies and regulations.";
-    return "I'm here to help with care-related questions!";
-  }
+  // String _generateAIResponse(String msg) {
+  //   final m = msg.toLowerCase();
+  //   if (m.contains('fitness'))
+  //     return "Try mixing cardio and strength training for best results.";
+  //   if (m.contains('diet'))
+  //     return "Focus on whole foods and stay hydrated throughout the day.";
+  //   if (m.contains('sleep'))
+  //     return "Aim for 7–9 hours of quality sleep each night.";
+  //   if (m.contains('stress'))
+  //     return "Try meditation, deep breathing, or a short walk.";
+  //   if (m.contains('hello') || m.contains('hi'))
+  //     return "Hello! I'm Violet. How can I help you today?";
+  //   if (m.contains('care'))
+  //     return "Person-centred care focuses on individual needs and preferences.";
+  //   if (m.contains('training'))
+  //     return "We have various training resources available for care staff.";
+  //   if (m.contains('activity') || m.contains('activities'))
+  //     return "Activities should be tailored to each resident's interests and abilities.";
+  //   if (m.contains('policy'))
+  //     return "I can help you understand care home policies and regulations.";
+  //   return "I'm here to help with care-related questions!";
+  // }
 
   void _startNewChat() {
     if (isLoading) return;
@@ -384,14 +393,16 @@ class _ChatsScreenState extends State<ChatsScreen> {
     }
   }
 
-  void _loadChatSession(int index) {
-    setState(() {
-      currentChatIndex = index;
-      currentMessages = List.from(chatSessions[index]['messages']);
-    });
-    Navigator.pop(context); // close drawer
-    _scrollToBottom();
-  }
+  // void _loadChatSession(int index) {
+  //   setState(() {
+  //     currentChatIndex = index;
+  //     currentMessages = List.from(
+  //       _controller.allMessagesSession[index]['messages'],
+  //     );
+  //   });
+  //   Navigator.pop(context); // close drawer
+  //   _scrollToBottom();
+  // }
 
   void _deleteChatSession(int index) {
     setState(() {
@@ -438,7 +449,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
                     onTap: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        MaterialPageRoute(builder: (_) => HomeScreen()),
                       );
                     },
                   ),
@@ -473,29 +484,35 @@ class _ChatsScreenState extends State<ChatsScreen> {
 
             // chat history list
             Expanded(
-              child: chatSessions.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'No chats yet',
-                        style: TextStyle(color: Colors.white54, fontSize: 14),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: chatSessions.length,
-                      itemBuilder: (_, index) {
-                        final session = chatSessions[index];
-                        final isActive = currentChatIndex == index;
+              child: Obx(() {
+                return _controller.allMessagesSession.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          'No chats yet',
+                          style: TextStyle(color: Colors.white54, fontSize: 14),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _controller.allMessagesSession.length,
+                        itemBuilder: (_, index) {
+                          final session = _controller.allMessagesSession[index];
+                          final isActive = currentChatIndex == index;
 
-                        return _chatHistoryItem(
-                          title: session['title'],
-                          isActive: isActive,
-                          onTap: () => _loadChatSession(index),
-                          onDelete: () => _deleteChatSession(index),
-                        );
-                      },
-                    ),
+                          return _controller.isLoading.value
+                              ? CircularProgressIndicator.adaptive()
+                              : _chatHistoryItem(
+                                  title: session['title'],
+                                  isActive: isActive,
+                                  onTap: () => _controller.getMessages(
+                                    _controller.allMessagesSession[index]['id'],
+                                  ),
+                                  onDelete: () => _deleteChatSession(index),
+                                );
+                        },
+                      );
+              }),
             ),
 
             // logout button

@@ -30,8 +30,8 @@ class StorageService {
   static const String _keyUserName = 'userName';
   static const String _keyUserEmail = 'userEmail';
   static const String _keyUserId = 'userId';
-  static const String _keyAccessToken = 'accessToken';
-  static const String _keyRefreshToken = 'refreshToken';
+  static const String _keyAccessToken = 'access';
+  static const String _keyRefreshToken = 'refresh';
   static const String _keyIsLoggedIn = 'isLoggedIn';
   static const String _keyIsFirstTimeUser = 'isFirstTimeUser';
   static const String _keyIsPremium = 'premium';
@@ -79,7 +79,7 @@ class StorageService {
   /// Set access token
   static Future<void> setAccessToken(String token) async {
     await _box.setString(_keyAccessToken, token);
-    Console.storage('Access token saved');
+    Console.storage('Access token saved $token');
   }
 
   /// Get access token

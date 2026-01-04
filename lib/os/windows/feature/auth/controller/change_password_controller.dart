@@ -32,12 +32,15 @@ class ChangePasswordController extends GetxController {
         if (response.statusCode == 200) {
           isLoading.value = false;
           SnackbarService.success('Password changed successfully');
+          password.clear();
+          confirmPassword.clear();
           Get.to(() => LoginScreen());
         } else {
           isLoading.value = false;
           SnackbarService.error('Error: ${response.data['detail']}');
         }
       } catch (e) {
+        isLoading.value = false;
         Console.error('Error: $e');
         SnackbarService.error('Error: $e');
       }

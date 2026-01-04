@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get_instance/get_instance.dart';
+import 'package:get/utils.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
+import 'package:violet/os/windows/feature/chat/controller/chat_controller.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
-class ChatScreen extends StatefulWidget {
+class DesktopViewChatScreen extends StatefulWidget {
   final String initialQuery;
   final String loadingIcon;
   final String title;
-  const ChatScreen({
+  final int botid;
+  const DesktopViewChatScreen({
     super.key,
     required this.initialQuery,
     required this.title,
     required this.loadingIcon,
+    required this.botid,
   });
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<DesktopViewChatScreen> createState() => _DesktopViewChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
   bool isCollapsed = false;
   String? hoveredItem;
   String? hoveredSidebarItem;
@@ -34,6 +39,8 @@ class _ChatScreenState extends State<ChatScreen> {
   int? currentChatIndex;
   List<Map<String, String>> currentMessages = [];
   bool isLoading = false;
+
+  final ChatController _controller = Get.put(ChatController());
 
   @override
   void dispose() {
@@ -131,7 +138,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 _sidebarItem(PathStrings.homeIcon, "Home", "home", () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    MaterialPageRoute(builder: (_) => HomeScreen()),
                   );
                 }, collapsed: isCollapsed),
 
@@ -404,7 +411,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             return KeyEventResult.ignored; // Allow other keys
                           },
                           child: TextField(
-                            controller: _messageController,
+                            controller: _controller.messageController,
                             focusNode: _messageFocusNode,
                             decoration: const InputDecoration(
                               hintText: "Type your message...",
@@ -420,9 +427,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Icons.send_rounded,
                           color: Color(ThemeColor.hintColor),
                         ),
-                        onPressed: () {
-                          _sendMessage();
-                        },
+                        onPressed: () => _controller.sendMessage(),
                       ),
                     ],
                   ),
