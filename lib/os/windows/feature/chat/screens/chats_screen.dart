@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
-import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 import '../controller/chat_controller.dart';
 
-class ChatsScreen extends StatelessWidget {
+// ⭐ Changed to StatefulWidget to properly handle controller lifecycle
+class ChatsScreen extends StatefulWidget {
   final dynamic initialQuery;
   final String loadingIcon;
   final int botid;
@@ -22,11 +22,30 @@ class ChatsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Initialize controller
-    final controller = Get.put(ChatController());
-    controller.setBotId(botid);
+  State<ChatsScreen> createState() => _ChatsScreenState();
+}
 
+class _ChatsScreenState extends State<ChatsScreen> {
+  late final ChatController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // ⭐ FIX: Delete existing controller and create new one for each bot
+    if (Get.isRegistered<ChatController>()) {
+      Get.delete<ChatController>();
+    }
+    controller = Get.put(ChatController());
+
+    // ⭐ FIX: Initialize bot AFTER build using addPostFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.setBotId(widget.botid);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       drawer: _NavigationDrawer(controller: controller),
@@ -72,10 +91,10 @@ class ChatsScreen extends StatelessWidget {
                   }
 
                   return controller.currentMessages.isEmpty
-                      ? _EmptyState(image: initialQuery)
+                      ? _EmptyState(image: widget.initialQuery)
                       : _ChatMessages(
                           controller: controller,
-                          loadingIcon: loadingIcon,
+                          loadingIcon: widget.loadingIcon,
                         );
                 }),
               ),
@@ -397,6 +416,8 @@ class _NavigationDrawer extends StatelessWidget {
                     icon: PathStrings.homeIcon,
                     label: 'Home',
                     onTap: () {
+                      // ⭐ Clean up before going home
+                      controller.resetController();
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => HomeScreen()),
@@ -413,25 +434,27 @@ class _NavigationDrawer extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 20),
+                  
+                  // ⭐ Chat History Title with count
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    child: Text(
-                      'Chat History',
+                    child: Obx(() => Text(
+                      'Chat History (${controller.currentBotSessions.length})',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
-                    ),
+                    )),
                   ),
                 ],
               ),
             ),
 
-            // Chat History List
+            // ⭐ Chat History List - Uses currentBotSessions
             Expanded(
               child: Obx(() {
                 if (controller.isSessionLoading.value) {
@@ -440,7 +463,8 @@ class _NavigationDrawer extends StatelessWidget {
                   );
                 }
 
-                if (controller.allSessions.isEmpty) {
+                // ⭐ Use currentBotSessions instead of allSessions
+                if (controller.currentBotSessions.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
@@ -452,9 +476,10 @@ class _NavigationDrawer extends StatelessWidget {
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: controller.allSessions.length,
+                  itemCount: controller.currentBotSessions.length,
                   itemBuilder: (_, index) {
-                    final session = controller.allSessions[index];
+                    // ⭐ Use currentBotSessions
+                    final session = controller.currentBotSessions[index];
                     final isActive =
                         controller.sessionId.value == session['id'];
 
@@ -466,7 +491,6 @@ class _NavigationDrawer extends StatelessWidget {
                         controller.loadSessionMessages(session['id']);
                       },
                       onDelete: () {
-                        // Show confirm dialog then delete
                         controller.confirmDeleteSession(index, context);
                       },
                     );
@@ -483,10 +507,7 @@ class _NavigationDrawer extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => LoginScreen()),
-                    );
+                    controller.signOut();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,

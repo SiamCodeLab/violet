@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/services/api_service.dart';
@@ -12,8 +14,19 @@ class ChatController extends GetxController {
   // CONTROLLERS
   // ============================================
   final messageController = TextEditingController();
-  final ScrollController scrollController = ScrollController();
   final FocusNode messageFocusNode = FocusNode();
+
+  ScrollController? _scrollController;
+
+  ScrollController get scrollController {
+    if (_scrollController == null ||
+        !_scrollController!.hasClients ||
+        _scrollController!.positions.length > 1) {
+      _scrollController?.dispose();
+      _scrollController = ScrollController();
+    }
+    return _scrollController!;
+  }
 
   // ============================================
   // STATE VARIABLES
@@ -22,12 +35,16 @@ class ChatController extends GetxController {
   RxBool isMessagesLoading = false.obs;
   RxBool isSending = false.obs;
   RxBool isDeleting = false.obs;
+  
+  // ⭐ Track if initial load is done
+  bool _isInitialized = false;
 
   // ============================================
   // DATA VARIABLES
   // ============================================
   RxnInt sessionId = RxnInt(null);
-  int botId = 0;
+  RxInt botId = 0.obs;
+  RxList<Map<String, dynamic>> currentBotSessions = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> allSessions = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> currentMessages = <Map<String, dynamic>>[].obs;
 
@@ -38,37 +55,111 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchAllSessions();
+    _scrollController = ScrollController();
   }
 
   @override
   void onClose() {
     messageController.dispose();
-    scrollController.dispose();
+    _scrollController?.dispose();
     messageFocusNode.dispose();
     super.onClose();
   }
 
+  // ============================================
+  // ⭐ FIXED: Set Bot ID - Use WidgetsBinding to avoid build error
+  // ============================================
+  
   void setBotId(int id) {
-    botId = id;
-    Console.info('Bot ID: $botId');
+    // If same bot, do nothing
+    if (_isInitialized && botId.value == id) {
+      Console.info('Same bot, skipping reload');
+      return;
+    }
+
+    botId.value = id;
+    Console.info('Bot ID set: $id');
+
+    // ⭐ Clear data immediately (sync)
+    _clearDataSync();
+
+    // ⭐ Fetch data AFTER build completes using addPostFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchSessionsForBot();
+      _isInitialized = true;
+    });
+  }
+
+  // ⭐ Sync clear - no setState, just clear values
+  void _clearDataSync() {
+    currentMessages.clear();
+    sessionId.value = null;
+    messageController.clear();
+    currentBotSessions.clear();
   }
 
   // ============================================
-  // GET ALL SESSIONS
+  // ⭐ ALTERNATIVE: Initialize from Screen
+  // ============================================
+  // Call this from initState or onInit of the screen
+  
+  void initializeForBot(int id) {
+    if (_isInitialized && botId.value == id) {
+      return;
+    }
+
+    botId.value = id;
+    _clearDataSync();
+    
+    // Delay fetch to avoid build conflicts
+    Future.microtask(() {
+      fetchSessionsForBot();
+      _isInitialized = true;
+    });
+  }
+
+  // ============================================
+  // ⭐ Reset when going back to home
+  // ============================================
+  
+  void resetController() {
+    _isInitialized = false;
+    _clearDataSync();
+    currentBotSessions.clear();
+    Console.info('Controller reset');
+  }
+
+  // ============================================
+  // API: GET SESSIONS FOR SPECIFIC BOT
   // ============================================
 
-  Future<void> fetchAllSessions() async {
+  Future<void> fetchSessionsForBot() async {
+    // ⭐ Safety check - don't fetch if bot not set
+    if (botId.value == 0) {
+      Console.info('Bot ID not set, skipping fetch');
+      return;
+    }
+
     try {
       isSessionLoading(true);
 
-      final response = await ApiService.getAuth(ApiEndpoint.chatSession);
+      final response = await ApiService.getAuth(
+        "${ApiEndpoint.chatSession}?bot_id=${botId.value}",
+      );
 
       if (response.statusCode == 200) {
-        Console.success('Sessions fetched');
-        allSessions.value = List<Map<String, dynamic>>.from(
-          response.data.map((item) => Map<String, dynamic>.from(item)),
-        );
+        Console.success('Sessions fetched for bot: ${botId.value}');
+
+        final List<dynamic> data = response.data;
+
+        final filteredSessions = data
+            .where((session) => session['bot_id'] == botId.value)
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+
+        currentBotSessions.value = filteredSessions;
+
+        Console.info('Found ${currentBotSessions.length} sessions');
       } else {
         Console.error('Error: ${response.data}');
       }
@@ -80,7 +171,64 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // GET SESSION MESSAGES
+  // SCROLL TO BOTTOM
+  // ============================================
+
+  void scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 150), () {
+      _tryScroll();
+    });
+  }
+
+  void _tryScroll() {
+    try {
+      if (_scrollController == null) return;
+      if (!_scrollController!.hasClients) return;
+
+      if (_scrollController!.positions.length != 1) {
+        _scrollUsingPosition();
+        return;
+      }
+
+      if (!_scrollController!.position.hasContentDimensions) {
+        Future.delayed(const Duration(milliseconds: 100), () => _tryScroll());
+        return;
+      }
+
+      final maxExtent = _scrollController!.position.maxScrollExtent;
+      if (maxExtent > 0) {
+        _scrollController!.animateTo(
+          maxExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    } catch (e) {
+      Console.error('[Scroll] Error: $e');
+      _scrollUsingPosition();
+    }
+  }
+
+  void _scrollUsingPosition() {
+    try {
+      if (_scrollController == null) return;
+      if (_scrollController!.positions.isEmpty) return;
+
+      final position = _scrollController!.positions.last;
+      if (position.hasContentDimensions) {
+        position.animateTo(
+          position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    } catch (e) {
+      Console.error('[Scroll] Fallback error: $e');
+    }
+  }
+
+  // ============================================
+  // API: GET SESSION MESSAGES
   // ============================================
 
   Future<void> loadSessionMessages(int id) async {
@@ -119,14 +267,13 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // SEND MESSAGE
+  // API: SEND MESSAGE
   // ============================================
 
   Future<void> sendMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty || isSending.value) return;
 
-    // Optimistic UI
     final userMessage = {
       'id': DateTime.now().millisecondsSinceEpoch,
       'sender': 'user',
@@ -140,7 +287,7 @@ class ChatController extends GetxController {
       isSending(true);
 
       final Map<String, String> fields = {
-        "bot_id": botId.toString(),
+        "bot_id": botId.value.toString(),
         "message": text,
       };
 
@@ -159,16 +306,14 @@ class ChatController extends GetxController {
 
         final data = response.data;
 
-        // Update session ID
         if (data['session_id'] != null) {
           final newSessionId = data['session_id'];
           if (sessionId.value == null || sessionId.value != newSessionId) {
             sessionId.value = newSessionId;
-            fetchAllSessions();
+            fetchSessionsForBot();
           }
         }
 
-        // Add AI response
         final aiResponse = data['ai_response'];
         if (aiResponse != null && aiResponse['success'] == true) {
           final aiMessage = {
@@ -192,17 +337,13 @@ class ChatController extends GetxController {
     }
   }
 
-  void signOut() async {
-    Get.put(LoginController()).logout();
-  }
-
   // ============================================
-  //  DELETE SESSION
+  // API: DELETE SESSION
   // ============================================
 
   Future<void> deleteSession(int index) async {
     try {
-      final session = allSessions[index];
+      final session = currentBotSessions[index];
       final id = session['id'];
 
       Console.info('Deleting session: $id');
@@ -212,14 +353,10 @@ class ChatController extends GetxController {
         "${ApiEndpoint.chatSession}$id/delete/",
       );
 
-      // Success check (200 or 204)
       if (response.statusCode == 200 || response.statusCode == 204) {
         Console.success('Session deleted: $id');
+        currentBotSessions.removeAt(index);
 
-        // Remove from local list
-        allSessions.removeAt(index);
-
-        // If deleted session was active, clear chat
         if (sessionId.value == id) {
           startNewChat();
         }
@@ -238,10 +375,11 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // HELPER: Confirm Delete Dialog
+  // DELETE CONFIRMATION DIALOGS
   // ============================================
+
   void confirmDeleteSession(int index, BuildContext context) {
-    final session = allSessions[index];
+    final session = currentBotSessions[index];
     final title = session['title'] ?? 'Untitled';
 
     DeleteConfirmationDialog.showSmart(
@@ -252,42 +390,6 @@ class ChatController extends GetxController {
     );
   }
 
-  /// Force dialog style (good for desktop)
-  void confirmDeleteSessionDialog(int index) {
-    final session = allSessions[index];
-    final title = session['title'] ?? 'Untitled';
-
-    DeleteConfirmationDialog.show(
-      title: 'Delete Chat',
-      itemName: title,
-      onConfirm: () => deleteSession(index),
-    );
-  }
-
-  /// Force bottom sheet style (good for mobile)
-  void confirmDeleteSessionBottomSheet(int index) {
-    final session = allSessions[index];
-    final title = session['title'] ?? 'Untitled';
-
-    DeleteConfirmationDialog.showBottomSheet(
-      title: 'Delete Chat',
-      itemName: title,
-      onConfirm: () => deleteSession(index),
-    );
-  }
-
-  /// Minimal style dialog
-  void confirmDeleteSessionMinimal(int index) {
-    final session = allSessions[index];
-    final title = session['title'] ?? 'Untitled';
-
-    DeleteConfirmationDialog.showMinimal(
-      title: 'Delete Chat',
-      message:
-          'Are you sure you want to delete "$title"? This action cannot be undone.',
-      onConfirm: () => deleteSession(index),
-    );
-  }
   // ============================================
   // HELPERS
   // ============================================
@@ -298,21 +400,16 @@ class ChatController extends GetxController {
     messageController.clear();
   }
 
-  void scrollToBottom() {
-    if (!scrollController.hasClients) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
   void requestFocus() {
     messageFocusNode.requestFocus();
+  }
+
+  void signOut() {
+    Get.put(LoginController()).logout();
+  }
+
+  void resetScrollController() {
+    _scrollController?.dispose();
+    _scrollController = ScrollController();
   }
 }
