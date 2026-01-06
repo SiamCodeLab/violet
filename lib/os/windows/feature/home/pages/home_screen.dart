@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
-import 'package:violet/os/windows/feature/chat/chats_screen.dart';
-import '../../chat/desktop_view_chat_screen.dart';
+import 'package:violet/os/windows/feature/chat/screens/chats_screen.dart';
+import '../../chat/screens/desktop_view_chat_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

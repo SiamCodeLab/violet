@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/controller/change_password_controller.dart';
-import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 import '../../../../../core/universal_widgets/s_input_field.dart';
 import '../widgets/auth_logo.dart';

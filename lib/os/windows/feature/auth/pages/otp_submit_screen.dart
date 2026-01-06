@@ -6,7 +6,6 @@ import 'package:violet/os/windows/feature/auth/controller/otp_submit_controller.
 import '../../../../../core/universal_widgets/s_input_field.dart';
 import '../widgets/auth_logo.dart';
 import '../widgets/auth_title.dart';
-import 'change_password_screen.dart';
 
 class OtpSubmitScreen extends StatelessWidget {
   OtpSubmitScreen({super.key});

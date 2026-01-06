@@ -7,6 +7,7 @@ import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/utils/console.dart';
+import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 class LoginController extends GetxService {
@@ -66,6 +67,11 @@ class LoginController extends GetxService {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void logout() async {
+    StorageService.clearUserSession();
+    Get.offAll(() => LoginScreen());
   }
 
   // Validate Sign In Form
