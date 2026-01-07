@@ -19,7 +19,7 @@ class ChangePasswordController extends GetxController {
       // Passwords match, perform password change logic here
       try {
         isLoading.value = true;
-        final response = await ApiService.postAuth(
+        final response = await ApiService.post(
           ApiEndpoint.changePassword,
           body: {
             "email": argument['email'],

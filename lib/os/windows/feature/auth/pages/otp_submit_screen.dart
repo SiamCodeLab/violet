@@ -57,20 +57,27 @@ class OtpSubmitScreen extends StatelessWidget {
                     hintText: 'Enter the OTP sent to your email',
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () => _controller.verifyOtp(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(ThemeColor.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  Obx(
+                    () => SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => _controller.verifyOtp(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(ThemeColor.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Send OTP',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                        child: _controller.isLoading.value
+                            ? const CircularProgressIndicator()
+                            : const Text(
+                                'Send OTP',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),

@@ -8,7 +8,7 @@ import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 import '../controller/chat_controller.dart';
 
-// ⭐ Changed to StatefulWidget to properly handle controller lifecycle
+// Changed to StatefulWidget to properly handle controller lifecycle
 class ChatsScreen extends StatefulWidget {
   final dynamic initialQuery;
   final String loadingIcon;
@@ -32,13 +32,13 @@ class _ChatsScreenState extends State<ChatsScreen> {
   void initState() {
     super.initState();
 
-    // ⭐ FIX: Delete existing controller and create new one for each bot
+    //  FIX: Delete existing controller and create new one for each bot
     if (Get.isRegistered<ChatController>()) {
       Get.delete<ChatController>();
     }
     controller = Get.put(ChatController());
 
-    // ⭐ FIX: Initialize bot AFTER build using addPostFrameCallback
+    //  FIX: Initialize bot AFTER build using addPostFrameCallback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setBotId(widget.botid);
     });
@@ -157,7 +157,11 @@ class _ChatMessages extends StatelessWidget {
           final chat = messages[index];
           final isUser = chat['sender'] == 'user';
 
-          return _MessageBubble(message: chat['message'] ?? '', isUser: isUser);
+          return _MessageBubble(
+            message: chat['message'] ?? '',
+            isUser: isUser,
+            fileName: chat['file_name'], //  Pass file name if exists
+          );
         },
       );
     });
@@ -171,8 +175,13 @@ class _ChatMessages extends StatelessWidget {
 class _MessageBubble extends StatelessWidget {
   final String message;
   final bool isUser;
+  final String? fileName; //  Optional file name
 
-  const _MessageBubble({required this.message, required this.isUser});
+  const _MessageBubble({
+    required this.message,
+    required this.isUser,
+    this.fileName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +204,42 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
+
+          //  File attachment display (if file exists)
+          if (fileName != null && fileName!.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Color(ThemeColor.primary).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Color(ThemeColor.primary).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getFileIcon(fileName!),
+                    size: 16,
+                    color: Color(ThemeColor.primary),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      fileName!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(ThemeColor.primary),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Message bubble
           Container(
@@ -241,6 +286,22 @@ class _MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  //  Get icon based on file extension
+  IconData _getFileIcon(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'txt':
+        return Icons.text_snippet;
+      default:
+        return Icons.insert_drive_file;
+    }
   }
 }
 
@@ -293,7 +354,12 @@ class _BottomSection extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // ⭐ File Attachment Preview
+          _FileAttachmentPreview(controller: controller),
+
+          // Input Field
           _FloatingInput(controller: controller),
+
           const SizedBox(height: 10),
           Text(
             'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
@@ -303,6 +369,113 @@ class _BottomSection extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ============================================
+// ⭐ FILE ATTACHMENT PREVIEW WIDGET
+// ============================================
+
+class _FileAttachmentPreview extends StatelessWidget {
+  final ChatController controller;
+
+  const _FileAttachmentPreview({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final file = controller.selectedFile.value;
+
+      // Don't show if no file selected
+      if (file == null) return const SizedBox.shrink();
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Color(ThemeColor.primary).withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // File Icon
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Color(ThemeColor.primary).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _getFileIcon(file.extension),
+                color: Color(ThemeColor.primary),
+                size: 20,
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            // File Name & Size
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    file.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    file.sizeFormatted,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            // ⭐ Remove Button (Cross)
+            GestureDetector(
+              onTap: () => controller.clearFile(),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.close, size: 16, color: Colors.grey[600]),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  IconData _getFileIcon(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'txt':
+        return Icons.text_snippet;
+      default:
+        return Icons.insert_drive_file;
+    }
   }
 }
 
@@ -338,9 +511,10 @@ class _FloatingInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          //  File Pick Button
           IconButton(
             icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 24),
-            onPressed: () {},
+            onPressed: () => controller.pickFile(),
           ),
           Expanded(
             child: TextField(
@@ -416,7 +590,7 @@ class _NavigationDrawer extends StatelessWidget {
                     icon: PathStrings.homeIcon,
                     label: 'Home',
                     onTap: () {
-                      // ⭐ Clean up before going home
+                      //  Clean up before going home
                       controller.resetController();
                       Navigator.pushReplacement(
                         context,
@@ -434,21 +608,23 @@ class _NavigationDrawer extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 20),
-                  
-                  // ⭐ Chat History Title with count
+
+                  //  Chat History Title with count
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    child: Obx(() => Text(
-                      'Chat History (${controller.currentBotSessions.length})',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                    child: Obx(
+                      () => Text(
+                        'Chat History (${controller.currentBotSessions.length})',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )),
+                    ),
                   ),
                 ],
               ),
@@ -463,7 +639,7 @@ class _NavigationDrawer extends StatelessWidget {
                   );
                 }
 
-                // ⭐ Use currentBotSessions instead of allSessions
+                //  Use currentBotSessions instead of allSessions
                 if (controller.currentBotSessions.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16),
@@ -478,7 +654,7 @@ class _NavigationDrawer extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: controller.currentBotSessions.length,
                   itemBuilder: (_, index) {
-                    // ⭐ Use currentBotSessions
+                    //  Use currentBotSessions
                     final session = controller.currentBotSessions[index];
                     final isActive =
                         controller.sessionId.value == session['id'];

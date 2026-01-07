@@ -32,14 +32,11 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
   void initState() {
     super.initState();
 
-    // ⭐ FIX: Use Get.put with tag OR delete existing and recreate
-    // Option 1: Delete existing controller and create new one for each bot
     if (Get.isRegistered<ChatController>()) {
       Get.delete<ChatController>();
     }
     controller = Get.put(ChatController());
 
-    // ⭐ FIX: Initialize bot AFTER build using addPostFrameCallback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setBotId(widget.botid);
     });
@@ -80,7 +77,7 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
                             );
                     }),
                   ),
-                  _DesktopFloatingInput(controller: controller),
+                  _DesktopBottomSection(controller: controller),
                 ],
               ),
             ),
@@ -182,7 +179,6 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                   ),
 
                 _buildSidebarItem(PathStrings.homeIcon, "Home", "home", () {
-                  // ⭐ Clean up before going home
                   widget.controller.resetController();
                   Navigator.pushReplacement(
                     context,
@@ -456,6 +452,7 @@ class _DesktopChatMessages extends StatelessWidget {
               return _DesktopMessageBubble(
                 message: chat['message'] ?? '',
                 isUser: isUser,
+                fileName: chat['file_name'],
               );
             },
           ),
@@ -472,8 +469,13 @@ class _DesktopChatMessages extends StatelessWidget {
 class _DesktopMessageBubble extends StatelessWidget {
   final String message;
   final bool isUser;
+  final String? fileName;
 
-  const _DesktopMessageBubble({required this.message, required this.isUser});
+  const _DesktopMessageBubble({
+    required this.message,
+    required this.isUser,
+    this.fileName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -490,6 +492,46 @@ class _DesktopMessageBubble extends StatelessWidget {
               isUser ? "You" : "Violet",
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
+
+            // File attachment display in message
+            if (fileName != null && fileName!.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 4, bottom: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Color(ThemeColor.primary).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Color(ThemeColor.primary).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _getFileIcon(fileName!),
+                      size: 16,
+                      color: Color(ThemeColor.primary),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        fileName!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(ThemeColor.primary),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
               padding: const EdgeInsets.all(16),
@@ -531,6 +573,21 @@ class _DesktopMessageBubble extends StatelessWidget {
       ),
     );
   }
+
+  IconData _getFileIcon(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'txt':
+        return Icons.text_snippet;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
 }
 
 // ============================================
@@ -567,18 +624,13 @@ class _DesktopLoadingBubble extends StatelessWidget {
 }
 
 // ============================================
-// FLOATING INPUT
+// BOTTOM SECTION - WITH FILE PREVIEW
 // ============================================
 
-class _DesktopFloatingInput extends StatelessWidget {
+class _DesktopBottomSection extends StatelessWidget {
   final ChatController controller;
 
-  const _DesktopFloatingInput({required this.controller});
-
-  void _handleSend() {
-    controller.sendMessage();
-    controller.requestFocus();
-  }
+  const _DesktopBottomSection({required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -590,78 +642,12 @@ class _DesktopFloatingInput extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.add,
-                          color: Color(ThemeColor.borderColor),
-                          size: 26,
-                        ),
-                        onPressed: () {},
-                      ),
-                      Expanded(
-                        child: Focus(
-                          onKeyEvent: (FocusNode node, KeyEvent event) {
-                            if (event is KeyDownEvent &&
-                                event.logicalKey == LogicalKeyboardKey.enter &&
-                                !HardwareKeyboard.instance.isShiftPressed) {
-                              _handleSend();
-                              return KeyEventResult.handled;
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: TextField(
-                            controller: controller.messageController,
-                            focusNode: controller.messageFocusNode,
-                            decoration: const InputDecoration(
-                              hintText: "Type your message...",
-                              border: InputBorder.none,
-                            ),
-                            maxLines: null,
-                          ),
-                        ),
-                      ),
-                      Obx(
-                        () => IconButton(
-                          icon: controller.isSending.value
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(ThemeColor.hintColor),
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.send_rounded,
-                                  color: Color(ThemeColor.hintColor),
-                                ),
-                          onPressed: controller.isSending.value
-                              ? null
-                              : _handleSend,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // File Attachment Preview
+                _DesktopFileAttachmentPreview(controller: controller),
+
+                // Input Field
+                _DesktopFloatingInput(controller: controller),
+
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 48),
@@ -679,6 +665,207 @@ class _DesktopFloatingInput extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ============================================
+// FILE ATTACHMENT PREVIEW - DESKTOP
+// ============================================
+
+class _DesktopFileAttachmentPreview extends StatelessWidget {
+  final ChatController controller;
+
+  const _DesktopFileAttachmentPreview({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final file = controller.selectedFile.value;
+
+      if (file == null) return const SizedBox.shrink();
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Color(ThemeColor.primary).withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // File Icon
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Color(ThemeColor.primary).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _getFileIcon(file.extension),
+                color: Color(ThemeColor.primary),
+                size: 22,
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // File Name and Size
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    file.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    file.sizeFormatted,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // Remove Button
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => controller.clearFile(),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, size: 18, color: Colors.grey[700]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  IconData _getFileIcon(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'txt':
+        return Icons.text_snippet;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+}
+
+// ============================================
+// FLOATING INPUT - DESKTOP
+// ============================================
+
+class _DesktopFloatingInput extends StatelessWidget {
+  final ChatController controller;
+
+  const _DesktopFloatingInput({required this.controller});
+
+  void _handleSend() {
+    controller.sendMessage();
+    controller.requestFocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // File Pick Button
+          IconButton(
+            icon: Icon(
+              Icons.add,
+              color: Color(ThemeColor.borderColor),
+              size: 26,
+            ),
+            onPressed: () => controller.pickFile(),
+            tooltip: 'Attach file',
+          ),
+          Expanded(
+            child: Focus(
+              onKeyEvent: (FocusNode node, KeyEvent event) {
+                if (event is KeyDownEvent &&
+                    event.logicalKey == LogicalKeyboardKey.enter &&
+                    !HardwareKeyboard.instance.isShiftPressed) {
+                  _handleSend();
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: TextField(
+                controller: controller.messageController,
+                focusNode: controller.messageFocusNode,
+                decoration: const InputDecoration(
+                  hintText: "Type your message...",
+                  border: InputBorder.none,
+                ),
+                maxLines: null,
+              ),
+            ),
+          ),
+          Obx(
+            () => IconButton(
+              icon: controller.isSending.value
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(ThemeColor.hintColor),
+                      ),
+                    )
+                  : Icon(
+                      Icons.send_rounded,
+                      color: Color(ThemeColor.hintColor),
+                    ),
+              onPressed: controller.isSending.value ? null : _handleSend,
+            ),
+          ),
+        ],
       ),
     );
   }

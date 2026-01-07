@@ -19,7 +19,7 @@ class EmailSubmitController extends GetxService {
       isLoading.value = true;
 
       // Make API call to
-      final response = await ApiService.postAuth(
+      final response = await ApiService.post(
         ApiEndpoint.forgetPassword,
         body: {"email": email.text},
       );

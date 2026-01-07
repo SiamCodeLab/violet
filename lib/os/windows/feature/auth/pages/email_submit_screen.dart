@@ -62,20 +62,29 @@ class EmailSubmitScreen extends StatelessWidget {
                     hintText: 'Enter your email address',
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () => _controller.sendOtp(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(ThemeColor.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  Obx(
+                    () => SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => _controller.sendOtp(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(ThemeColor.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Send OTP',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                        child: _controller.isLoading.value
+                            ? CircularProgressIndicator.adaptive(
+                                backgroundColor: Colors.white,
+                              )
+                            : Text(
+                                'Send OTP',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),

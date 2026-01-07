@@ -105,9 +105,18 @@ class LoginScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      child: Obx(
+                        () => _controller.isLoading.value
+                            ? CircularProgressIndicator.adaptive(
+                                backgroundColor: Colors.white,
+                              )
+                            : Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),

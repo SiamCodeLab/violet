@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/core/const/api_endpoint.dart';
+import 'package:violet/core/utils/file_picker_helper.dart';
 import 'package:violet/os/windows/feature/auth/controller/login_controller.dart';
 import 'package:violet/os/windows/feature/chat/widgets/delete_confirmation_widget.dart';
 
@@ -35,8 +35,9 @@ class ChatController extends GetxController {
   RxBool isMessagesLoading = false.obs;
   RxBool isSending = false.obs;
   RxBool isDeleting = false.obs;
-  
-  // ⭐ Track if initial load is done
+  Rx<PickedFileInfo?> selectedFile = Rx<PickedFileInfo?>(null);
+
+  // Track if initial load is done
   bool _isInitialized = false;
 
   // ============================================
@@ -44,7 +45,8 @@ class ChatController extends GetxController {
   // ============================================
   RxnInt sessionId = RxnInt(null);
   RxInt botId = 0.obs;
-  RxList<Map<String, dynamic>> currentBotSessions = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> currentBotSessions =
+      <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> allSessions = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> currentMessages = <Map<String, dynamic>>[].obs;
 
@@ -67,9 +69,9 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // ⭐ FIXED: Set Bot ID - Use WidgetsBinding to avoid build error
+  //  FIXED: Set Bot ID - Use WidgetsBinding to avoid build error
   // ============================================
-  
+
   void setBotId(int id) {
     // If same bot, do nothing
     if (_isInitialized && botId.value == id) {
@@ -80,17 +82,17 @@ class ChatController extends GetxController {
     botId.value = id;
     Console.info('Bot ID set: $id');
 
-    // ⭐ Clear data immediately (sync)
+    //  Clear data immediately (sync)
     _clearDataSync();
 
-    // ⭐ Fetch data AFTER build completes using addPostFrameCallback
+    //  Fetch data AFTER build completes using addPostFrameCallback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchSessionsForBot();
       _isInitialized = true;
     });
   }
 
-  // ⭐ Sync clear - no setState, just clear values
+  //  Sync clear - no setState, just clear values
   void _clearDataSync() {
     currentMessages.clear();
     sessionId.value = null;
@@ -99,10 +101,10 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // ⭐ ALTERNATIVE: Initialize from Screen
+  //  ALTERNATIVE: Initialize from Screen
   // ============================================
   // Call this from initState or onInit of the screen
-  
+
   void initializeForBot(int id) {
     if (_isInitialized && botId.value == id) {
       return;
@@ -110,7 +112,7 @@ class ChatController extends GetxController {
 
     botId.value = id;
     _clearDataSync();
-    
+
     // Delay fetch to avoid build conflicts
     Future.microtask(() {
       fetchSessionsForBot();
@@ -119,9 +121,9 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // ⭐ Reset when going back to home
+  //  Reset when going back to home
   // ============================================
-  
+
   void resetController() {
     _isInitialized = false;
     _clearDataSync();
@@ -134,7 +136,7 @@ class ChatController extends GetxController {
   // ============================================
 
   Future<void> fetchSessionsForBot() async {
-    // ⭐ Safety check - don't fetch if bot not set
+    //  Safety check - don't fetch if bot not set
     if (botId.value == 0) {
       Console.info('Bot ID not set, skipping fetch');
       return;
@@ -168,6 +170,24 @@ class ChatController extends GetxController {
     } finally {
       isSessionLoading(false);
     }
+  }
+
+  // ============================================
+  // FILE PICKER
+  // ============================================
+
+  Future<void> pickFile() async {
+    final file = await FilePickerHelper.pickFile();
+    if (file != null) {
+      selectedFile.value = file;
+      Console.info('File selected: ${file.name} (${file.sizeFormatted})');
+    }
+  }
+
+  /// Clear selected file
+  void clearFile() {
+    selectedFile.value = null;
+    Console.info('File cleared');
   }
 
   // ============================================
@@ -269,18 +289,26 @@ class ChatController extends GetxController {
   // ============================================
   // API: SEND MESSAGE
   // ============================================
-
   Future<void> sendMessage() async {
     final text = messageController.text.trim();
-    if (text.isEmpty || isSending.value) return;
+    final file = selectedFile.value;
 
+    // Allow send if text OR file exists
+    if ((text.isEmpty && file == null) || isSending.value) return;
+
+    // Optimistic UI - include file name if exists
     final userMessage = {
       'id': DateTime.now().millisecondsSinceEpoch,
       'sender': 'user',
-      'message': text,
+      'message': text.isNotEmpty ? text : 'Sent a file',
+      'file_name': file?.name,
     };
     currentMessages.add(userMessage);
     messageController.clear();
+    clearFile();
+
+    // Keep reference before clearing
+    final fileToSend = file?.file; // Get the actual File object
     scrollToBottom();
 
     try {
@@ -295,10 +323,12 @@ class ChatController extends GetxController {
         fields["session_id"] = sessionId.value.toString();
       }
 
+      // Send with or without file
       final response = await ApiService.uploadMultipart(
         url: ApiEndpoint.chatbot,
         method: 'POST',
         fields: fields,
+        files: fileToSend != null ? {'file': fileToSend} : null,
       );
 
       if (response.statusCode == 200) {
@@ -356,6 +386,7 @@ class ChatController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 204) {
         Console.success('Session deleted: $id');
         currentBotSessions.removeAt(index);
+        Get.back();
 
         if (sessionId.value == id) {
           startNewChat();
@@ -388,6 +419,8 @@ class ChatController extends GetxController {
       itemName: title,
       onConfirm: () => deleteSession(index),
     );
+
+    Console.info('Confirm delete session: $title');
   }
 
   // ============================================
@@ -398,6 +431,8 @@ class ChatController extends GetxController {
     currentMessages.clear();
     sessionId.value = null;
     messageController.clear();
+    clearFile();
+    Console.info('New chat started');
   }
 
   void requestFocus() {
@@ -406,10 +441,13 @@ class ChatController extends GetxController {
 
   void signOut() {
     Get.put(LoginController()).logout();
+    Console.info('User signed out');
   }
 
   void resetScrollController() {
     _scrollController?.dispose();
     _scrollController = ScrollController();
+    clearFile();
+    Console.info('Controller reset');
   }
 }

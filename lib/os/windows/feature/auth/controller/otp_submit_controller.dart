@@ -11,11 +11,11 @@ class OtpSubmitController extends GetxController {
   RxBool isLoading = false.obs;
 
   Future<void> verifyOtp() async {
-    Console.info('OTP: ${otp.text.trim()}');
+    Console.info('OTP: ${otp.text.trim()} Email: ${Get.arguments}');
     if (otp.text.trim().isEmpty) return;
     try {
       isLoading(true);
-      final response = await ApiService.postAuth(
+      final response = await ApiService.post(
         ApiEndpoint.verifyOtp,
         body: {"code": otp.text.trim(), "email": Get.arguments},
       );
@@ -29,12 +29,14 @@ class OtpSubmitController extends GetxController {
         );
         otp.clear();
       } else if (response.statusCode == 400) {
+        isLoading(false);
         if (response.data['non_field_errors'][0] ==
             'Invalid or expired verification code.') {
           SnackbarService.error('Invalid verification code.');
           Console.error('Invalid or expired verification code.');
         }
       } else {
+        isLoading(false);
         SnackbarService.error('Verification code has expired.');
         Console.error('Verification code has expired.');
       }
