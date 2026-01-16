@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
@@ -477,8 +478,26 @@ class _DesktopMessageBubble extends StatelessWidget {
     this.fileName,
   });
 
+  /// Process the message to handle escaped characters from API
+  String _processMarkdown(String text) {
+    String processed = text;
+
+    // Replace literal \n with actual newlines
+    processed = processed.replaceAll('\\n', '\n');
+
+    // Replace literal \t with actual tabs
+    processed = processed.replaceAll('\\t', '\t');
+
+    // Handle escaped quotes
+    processed = processed.replaceAll('\\"', '"');
+
+    return processed.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String processedMessage = _processMarkdown(message);
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
@@ -493,7 +512,7 @@ class _DesktopMessageBubble extends StatelessWidget {
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
 
-            // File attachment display in message
+            // File attachment display
             if (fileName != null && fileName!.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(top: 4, bottom: 4),
@@ -532,6 +551,7 @@ class _DesktopMessageBubble extends StatelessWidget {
                 ),
               ),
 
+            // Message Container
             Container(
               margin: const EdgeInsets.symmetric(vertical: 8),
               padding: const EdgeInsets.all(16),
@@ -550,16 +570,150 @@ class _DesktopMessageBubble extends StatelessWidget {
                   ),
                 ],
               ),
-              child: SelectableText(
-                message,
-                style: TextStyle(fontSize: 15, height: 1.5),
-              ),
+              child: isUser
+                  ? SelectableText(
+                      processedMessage,
+                      style: TextStyle(fontSize: 15, height: 1.5),
+                    )
+                  : MarkdownBody(
+                      data: processedMessage,
+                      selectable: true,
+                      shrinkWrap: true,
+                      styleSheet: MarkdownStyleSheet(
+                        // Paragraph
+                        p: const TextStyle(
+                          fontSize: 15,
+                          height: 1.6,
+                          color: Colors.black87,
+                        ),
+
+                        // Headers
+                        h1: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          height: 1.4,
+                        ),
+                        h2: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          height: 1.4,
+                        ),
+                        h3: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          height: 1.4,
+                        ),
+                        h4: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          height: 1.4,
+                        ),
+                        h5: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          height: 1.4,
+                        ),
+                        h6: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black54,
+                          height: 1.4,
+                        ),
+
+                        // Bold & Italic
+                        strong: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        em: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.black87,
+                        ),
+
+                        // Lists
+                        listBullet: TextStyle(
+                          fontSize: 15,
+                          color: Color(ThemeColor.primary),
+                        ),
+                        listIndent: 24.0,
+
+                        // Blockquote
+                        blockquote: TextStyle(
+                          fontSize: 15,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[700],
+                          height: 1.5,
+                        ),
+                        blockquoteDecoration: BoxDecoration(
+                          border: Border(
+                            left: BorderSide(
+                              color: Color(ThemeColor.primary),
+                              width: 4,
+                            ),
+                          ),
+                        ),
+                        blockquotePadding: const EdgeInsets.only(
+                          left: 16,
+                          top: 8,
+                          bottom: 8,
+                        ),
+
+                        // Code
+                        code: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                          backgroundColor: Colors.grey[200],
+                          color: Colors.red[700],
+                        ),
+                        codeblockDecoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        codeblockPadding: const EdgeInsets.all(12),
+
+                        // Horizontal rule
+                        horizontalRuleDecoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: Colors.grey[300]!, width: 1),
+                          ),
+                        ),
+
+                        // Table
+                        tableHead: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        tableBody: const TextStyle(fontSize: 14),
+                        tableBorder: TableBorder.all(
+                          color: Colors.grey[300]!,
+                          width: 1,
+                        ),
+                        tableCellsPadding: const EdgeInsets.all(8),
+
+                        // Links
+                        a: TextStyle(
+                          color: Color(ThemeColor.primary),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
             ),
+
+            // Copy button for bot messages
             if (!isUser)
               IconButton(
                 icon: Icon(Icons.copy_rounded, size: 20, color: Colors.black),
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: message));
+                  // Remove markdown symbols for clean copy
+                  final cleanMessage = processedMessage
+                      .replaceAll(RegExp(r'\*\*'), '')
+                      .replaceAll(RegExp(r'\*'), '');
+                  Clipboard.setData(ClipboardData(text: cleanMessage));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Copied to clipboard'),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
@@ -160,7 +161,7 @@ class _ChatMessages extends StatelessWidget {
           return _MessageBubble(
             message: chat['message'] ?? '',
             isUser: isUser,
-            fileName: chat['file_name'], //  Pass file name if exists
+            fileName: chat['file_name'],
           );
         },
       );
@@ -169,13 +170,13 @@ class _ChatMessages extends StatelessWidget {
 }
 
 // ============================================
-// MESSAGE BUBBLE WIDGET
+// MESSAGE BUBBLE WIDGET WITH MARKDOWN
 // ============================================
 
 class _MessageBubble extends StatelessWidget {
   final String message;
   final bool isUser;
-  final String? fileName; //  Optional file name
+  final String? fileName;
 
   const _MessageBubble({
     required this.message,
@@ -183,8 +184,26 @@ class _MessageBubble extends StatelessWidget {
     this.fileName,
   });
 
+  /// Process the message to handle escaped characters from API
+  String _processMarkdown(String text) {
+    String processed = text;
+
+    // Replace literal \n with actual newlines
+    processed = processed.replaceAll('\\n', '\n');
+
+    // Replace literal \t with actual tabs
+    processed = processed.replaceAll('\\t', '\t');
+
+    // Handle escaped quotes
+    processed = processed.replaceAll('\\"', '"');
+
+    return processed.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String processedMessage = _processMarkdown(message);
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
@@ -205,7 +224,7 @@ class _MessageBubble extends StatelessWidget {
             ),
           ),
 
-          //  File attachment display (if file exists)
+          // File attachment display (if file exists)
           if (fileName != null && fileName!.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(bottom: 6),
@@ -260,17 +279,149 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ],
             ),
-            child: Text(
-              message,
-              style: TextStyle(color: Colors.black, fontSize: 15),
-            ),
+            child: isUser
+                ? Text(
+                    processedMessage,
+                    style: TextStyle(color: Colors.black, fontSize: 15),
+                  )
+                : MarkdownBody(
+                    data: processedMessage,
+                    selectable: true,
+                    shrinkWrap: true,
+                    styleSheet: MarkdownStyleSheet(
+                      // Paragraph
+                      p: const TextStyle(
+                        fontSize: 15,
+                        height: 1.6,
+                        color: Colors.black87,
+                      ),
+
+                      // Headers
+                      h1: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
+                      h2: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
+                      h3: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
+                      h4: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
+                      h5: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
+                      h6: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                        height: 1.4,
+                      ),
+
+                      // Bold & Italic
+                      strong: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      em: const TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.black87,
+                      ),
+
+                      // Lists
+                      listBullet: TextStyle(
+                        fontSize: 15,
+                        color: Color(ThemeColor.primary),
+                      ),
+                      listIndent: 20.0,
+
+                      // Blockquote
+                      blockquote: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                      blockquoteDecoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: Color(ThemeColor.primary),
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                      blockquotePadding: const EdgeInsets.only(
+                        left: 12,
+                        top: 6,
+                        bottom: 6,
+                      ),
+
+                      // Code
+                      code: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        backgroundColor: Colors.grey[200],
+                        color: Colors.red[700],
+                      ),
+                      codeblockDecoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      codeblockPadding: const EdgeInsets.all(10),
+
+                      // Horizontal rule
+                      horizontalRuleDecoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.grey[300]!, width: 1),
+                        ),
+                      ),
+
+                      // Table
+                      tableHead: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                      tableBody: const TextStyle(fontSize: 13),
+                      tableBorder: TableBorder.all(
+                        color: Colors.grey[300]!,
+                        width: 1,
+                      ),
+                      tableCellsPadding: const EdgeInsets.all(6),
+
+                      // Links
+                      a: TextStyle(
+                        color: Color(ThemeColor.primary),
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
           ),
 
           // Copy button for Violet
           if (!isUser)
             GestureDetector(
               onTap: () {
-                Clipboard.setData(ClipboardData(text: message));
+                // Remove markdown symbols for clean copy
+                final cleanMessage = processedMessage
+                    .replaceAll(RegExp(r'\*\*'), '')
+                    .replaceAll(RegExp(r'\*'), '');
+                Clipboard.setData(ClipboardData(text: cleanMessage));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Copied to clipboard'),
@@ -288,7 +439,7 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  //  Get icon based on file extension
+  // Get icon based on file extension
   IconData _getFileIcon(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
     switch (ext) {
