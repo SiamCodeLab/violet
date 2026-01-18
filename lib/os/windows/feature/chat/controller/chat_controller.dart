@@ -386,7 +386,6 @@ class ChatController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 204) {
         Console.success('Session deleted: $id');
         currentBotSessions.removeAt(index);
-        Get.back();
 
         if (sessionId.value == id) {
           startNewChat();
