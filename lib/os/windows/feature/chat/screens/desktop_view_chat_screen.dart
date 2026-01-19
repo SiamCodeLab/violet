@@ -49,7 +49,11 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
       backgroundColor: Colors.white,
       body: Row(
         children: [
-          _DesktopSidebar(controller: controller, botTitle: widget.title),
+          _DesktopSidebar(
+            controller: controller,
+            botTitle: widget.title,
+            loadingIcon: widget.loadingIcon,
+          ),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -96,8 +100,13 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
 class _DesktopSidebar extends StatefulWidget {
   final ChatController controller;
   final String botTitle;
+  final String loadingIcon;
 
-  const _DesktopSidebar({required this.controller, required this.botTitle});
+  const _DesktopSidebar({
+    required this.controller,
+    required this.botTitle,
+    required this.loadingIcon,
+  });
 
   @override
   State<_DesktopSidebar> createState() => _DesktopSidebarState();
@@ -106,6 +115,7 @@ class _DesktopSidebar extends StatefulWidget {
 class _DesktopSidebarState extends State<_DesktopSidebar> {
   bool isCollapsed = false;
   String? hoveredItem;
+
   String? hoveredSidebarItem;
   final ScrollController _sidebarScrollController = ScrollController();
 
@@ -162,7 +172,12 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.smart_toy, color: Colors.white, size: 20),
+                        Image.asset(
+                          widget.loadingIcon,
+                          width: 18,
+                          height: 18,
+                          color: Colors.white,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
