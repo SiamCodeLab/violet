@@ -25,12 +25,6 @@ class HomeScreen extends StatelessWidget {
         'icon': PathStrings.chatIcon,
       },
       {
-        'bot_id': 3,
-        'title': 'Training Resources',
-        'image': PathStrings.training,
-        'icon': PathStrings.trainginIcon,
-      },
-      {
         'bot_id': 4,
         'title': 'Activities Ideas',
         'image': PathStrings.activities,
@@ -138,7 +132,8 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             _buildCard(context, demoData[3], cardSize, true),
                             SizedBox(width: spacing),
-                            _buildCard(context, demoData[4], cardSize, true),
+                            if (demoData.length > 4)
+                              _buildCard(context, demoData[4], cardSize, true),
                           ],
                         ),
                       ],
@@ -163,105 +158,109 @@ class HomeScreen extends StatelessWidget {
     }
 
     // ========== DESKTOP VERSION ==========
-    // responsive grid, scrollable if needed
+    // Fully responsive - no scroll, everything scales with screen
     return Scaffold(
       backgroundColor: Color(ThemeColor.backgroundColor),
       body: SafeArea(
-        child: Center(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final double availableWidth = constraints.maxWidth;
-              final double availableHeight = constraints.maxHeight;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final double screenWidth = constraints.maxWidth;
+            final double screenHeight = constraints.maxHeight;
 
-              // cap max width at 1100 for readability
-              double maxWidth = availableWidth > 1100 ? 1100 : availableWidth;
+            // Use smaller dimension to ensure everything fits
+            final double smallerDimension = screenWidth < screenHeight
+                ? screenWidth
+                : screenHeight;
 
-              // rough height estimates for scroll check
-              final double logoHeight = 200;
-              final double textHeight = 200;
+            // Scale based on screen size - reference 1000px = 1.0
+            final double scale = (smallerDimension / 1000).clamp(0.5, 1.4);
 
-              // figure out how many cards per row based on screen width
-              final int crossCount;
-              if (availableWidth > 800) {
-                crossCount = 5;
-              } else if (availableWidth > 450) {
-                crossCount = 3;
-              } else {
-                crossCount = 2;
-              }
+            // Fixed padding ratio to screen
+            final double horizontalPadding = screenWidth * 0.03;
+            final double verticalPadding = screenHeight * 0.02;
 
-              final double spacing = availableWidth <= 450 ? 25.0 : 20.0;
-              final double itemWidth =
-                  (maxWidth - 100 - (crossCount - 1) * spacing) / crossCount;
-              final int rowCount = (demoData.length / crossCount).ceil();
-              final double cardsHeight =
-                  (itemWidth * rowCount) + (spacing * (rowCount - 1));
+            // Available space after padding
+            final double availableWidth = screenWidth - (horizontalPadding * 2);
+            final double availableHeight = screenHeight - (verticalPadding * 2);
 
-              final double disclaimerHeight = 60;
-              final double paddingHeight = 100;
-              final double spacingHeight = 180;
+            // Card calculation - cards take ~25% of screen height
+            final double cardSpacing = availableWidth * 0.02;
+            final int cardCount = 4;
 
-              // check if everything fits without scrolling
-              final double totalContentHeight =
-                  logoHeight +
-                  textHeight +
-                  cardsHeight +
-                  disclaimerHeight +
-                  paddingHeight +
-                  spacingHeight;
+            // Card size based on width (fit 4 cards with spacing)
+            final double cardWidthBased =
+                (availableWidth - (cardSpacing * (cardCount + 1))) / cardCount;
 
-              final bool contentFits = totalContentHeight <= availableHeight;
+            // Card size based on height (cards should be ~25% of height)
+            final double cardHeightBased = availableHeight * 0.22;
 
-              // main content column
-              Widget content = ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
+            // Use smaller to ensure fit
+            final double cardSize = cardWidthBased < cardHeightBased
+                ? cardWidthBased
+                : cardHeightBased;
+
+            // All sizes relative to card size for consistent proportions
+            final double logoWidth = cardSize * 0.9;
+
+            // Text sizes relative to card
+            final double titleFontSize = cardSize * 0.18;
+            final double subtitleFontSize = cardSize * 0.15;
+            final double descFontSize = cardSize * 0.11;
+            final double disclaimerFontSize = cardSize * 0.09;
+
+            // Spacing relative to available height for consistent gaps
+            final double logoToTitle = availableHeight * 0.015;
+            final double titleToSubtitle = availableHeight * 0.06;
+            final double subtitleGap = availableHeight * 0.01;
+
+            return Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding,
+              ),
+              child: Center(
                 child: Column(
-                  mainAxisAlignment: contentFits
-                      ? MainAxisAlignment.center
-                      : MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    if (!contentFits) const SizedBox(height: 40),
-
-                    // logo
-                    Image.asset(PathStrings.logoPath, width: 200),
-
-                    // spacing: logo -> title = 15
-                    const SizedBox(height: 15),
-
-                    // main title
-                    Text(
-                      'Violet supports person-centred care, making every moment truly count.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w400,
-                        color: Color(ThemeColor.primary),
-                      ),
-                    ),
-
-                    // spacing: title -> subhead = 86
-                    const SizedBox(height: 86),
-
-                    // subtitle section
+                    // Top section - Logo and titles
                     Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // Logo
+                        Image.asset(PathStrings.logoPath, width: logoWidth),
+
+                        SizedBox(height: logoToTitle),
+
+                        // Main title
                         Text(
-                          'How would you like Violet to help you?',
+                          'Violet supports person-centred care, making every moment truly count.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: titleFontSize,
                             fontWeight: FontWeight.w400,
                             color: Color(ThemeColor.primary),
                           ),
                         ),
-                        // spacing: subhead -> subhead = 10
-                        const SizedBox(height: 10),
+
+                        SizedBox(height: titleToSubtitle),
+
+                        // Subtitle section
                         Text(
-                          'Choose one of the functions below or simply click Ask Violet ',
+                          'How would you like Violet to help you?',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: subtitleFontSize,
+                            fontWeight: FontWeight.w400,
+                            color: Color(ThemeColor.primary),
+                          ),
+                        ),
+                        SizedBox(height: subtitleGap),
+                        Text(
+                          'Choose one of the functions below or simply click Ask Violet',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: descFontSize,
                             fontWeight: FontWeight.w500,
                             color: Color(ThemeColor.primary),
                           ),
@@ -269,126 +268,49 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
 
-                    if (!contentFits) const SizedBox(height: 50),
-                    if (contentFits) const SizedBox(height: 50),
-
-                    // cards grid - adapts columns based on width
-                    LayoutBuilder(
-                      builder: (context, subConstraints) {
-                        final int crossCount;
-                        if (subConstraints.maxWidth > 800) {
-                          crossCount = 5;
-                        } else if (subConstraints.maxWidth > 450) {
-                          crossCount = 3;
-                        } else {
-                          crossCount = 2;
-                        }
-                        final double spacing = subConstraints.maxWidth <= 450
-                            ? 25.0
-                            : 20.0;
-                        final double itemWidth =
-                            (subConstraints.maxWidth -
-                                (crossCount - 1) * spacing) /
-                            crossCount;
-
-                        return Wrap(
-                          spacing: spacing,
-                          runSpacing: spacing,
-                          alignment: WrapAlignment.center,
-                          children: List.generate(demoData.length, (index) {
-                            final item = demoData[index];
-                            return SizedBox(
-                              width: subConstraints.maxWidth > 800
-                                  ? itemWidth
-                                  : subConstraints.maxWidth > 450
-                                  ? itemWidth - 48
-                                  : itemWidth - 48,
-                              height: subConstraints.maxWidth > 800
-                                  ? itemWidth
-                                  : subConstraints.maxWidth > 450
-                                  ? itemWidth - 48
-                                  : itemWidth - 48,
-                              child: InkWell(
-                                onTap: () => Get.to(
-                                  () => DesktopViewChatScreen(
-                                    initialQuery: item['image'],
-                                    title: item['title'],
-                                    loadingIcon: item['icon'],
-                                    botid: item['bot_id'],
-                                  ),
-                                  arguments: item['bot_id'],
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(9),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Image.asset(
-                                      item['image'],
-                                      fit: BoxFit.contain,
-                                      width: 150,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
+                    // Cards row - centered
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: List.generate(demoData.length, (index) {
+                        final item = demoData[index];
+                        return Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: cardSpacing / 2,
+                          ),
+                          child: _buildDesktopCard(
+                            context,
+                            item,
+                            cardSize,
+                            scale,
+                          ),
                         );
-                      },
+                      }),
                     ),
 
-                    if (!contentFits) const SizedBox(height: 50),
-                    if (contentFits) const SizedBox(height: 50),
-
-                    // disclaimer
-                    SizedBox(
-                      width: 1000,
-                      child: Text(
-                        'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: const Color(
-                            ThemeColor.hintColor,
-                          ).withOpacity(0.5),
-                        ),
+                    // Disclaimer
+                    Text(
+                      'Users are responsible for verifying the accuracy of advice Violet provides as AI may on occasion produce incorrect information.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: disclaimerFontSize,
+                        color: const Color(
+                          ThemeColor.hintColor,
+                        ).withOpacity(0.5),
                       ),
                     ),
-
-                    if (!contentFits) const SizedBox(height: 40),
                   ],
                 ),
-              );
-
-              // no scroll if fits, otherwise wrap in scrollview
-              if (contentFits) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 50),
-                  child: Center(child: content),
-                );
-              } else {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 50),
-                  child: Center(child: content),
-                );
-              }
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  // builds individual card widget
+  // builds individual card widget for mobile
   Widget _buildCard(
     BuildContext context,
     Map<String, dynamic> item,
@@ -422,6 +344,57 @@ class HomeScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(10.0),
             child: Image.asset(item['image'], fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // builds individual card widget for desktop - with hover effect
+  Widget _buildDesktopCard(
+    BuildContext context,
+    Map<String, dynamic> item,
+    double cardSize,
+    double scale,
+  ) {
+    // Border radius and padding proportional to card size
+    final double borderRadius = cardSize * 0.05;
+    final double padding = cardSize * 0.1;
+
+    return SizedBox(
+      width: cardSize,
+      height: cardSize,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          onTap: () => Get.to(
+            () => DesktopViewChatScreen(
+              initialQuery: item['image'],
+              title: item['title'],
+              loadingIcon: item['icon'],
+              botid: item['bot_id'],
+            ),
+            arguments: item['bot_id'],
+          ),
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(borderRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: cardSize * 0.04,
+                  offset: Offset(0, cardSize * 0.015),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: Image.asset(item['image'], fit: BoxFit.contain),
+            ),
           ),
         ),
       ),
