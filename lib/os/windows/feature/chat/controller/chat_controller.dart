@@ -269,6 +269,7 @@ class ChatController extends GetxController {
             'id': msg['id'],
             'sender': msg['role'] == 'user' ? 'user' : 'violet',
             'message': msg['content'] ?? '',
+            'file_name': msg['file_name'],
             'created_at': msg['created_at'],
           };
         }).toList();
