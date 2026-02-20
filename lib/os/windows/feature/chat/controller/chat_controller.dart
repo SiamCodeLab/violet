@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
+import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/core/const/api_endpoint.dart';
 import 'package:violet/core/utils/file_picker_helper.dart';
@@ -49,14 +50,16 @@ class ChatController extends GetxController {
       <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> allSessions = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> currentMessages = <Map<String, dynamic>>[].obs;
+  RxString email = ''.obs;
 
   // ============================================
   // LIFECYCLE
   // ============================================
 
   @override
-  void onInit() {
+  void onInit() async{
     super.onInit();
+    email.value = await StorageService.getUserEmail();
     _scrollController = ScrollController();
   }
 

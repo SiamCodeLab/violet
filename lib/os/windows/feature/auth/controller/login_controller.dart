@@ -49,7 +49,9 @@ class LoginController extends GetxService {
         await StorageService.saveUserSession(
           accessToken: data['access'],
           refreshToken: data['refresh'],
+          userId: data['user_id'],
         );
+        await StorageService.setUserEmail(loginEmailController.text.trim());
         Console.info(data['access']);
         Console.success('User signed in successfully');
         SnackbarService.success('User signed in successfully');

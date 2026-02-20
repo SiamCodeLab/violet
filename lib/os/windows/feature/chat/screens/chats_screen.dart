@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
+import 'package:violet/core/const/app_colors.dart';
 import 'package:violet/core/const/path_strings.dart';
+import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
@@ -732,9 +734,20 @@ class _NavigationDrawer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.menu, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+          
+                      // Icon(Icons.email, color: AppColors.textWhite, size: 14),
+                      SizedBox(width: 3),
+                      Text(
+                        controller.email.value,
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   _DrawerItem(
