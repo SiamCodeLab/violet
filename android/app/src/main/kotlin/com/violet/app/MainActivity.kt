@@ -1,4 +1,4 @@
-package com.example.violet
+package com.violet.app
 
 import io.flutter.embedding.android.FlutterActivity
 
