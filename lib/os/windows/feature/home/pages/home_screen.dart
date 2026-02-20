@@ -116,24 +116,23 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
 
-                    // cards grid - row 1: 3 cards, row 2: 2 cards centered
                     Column(
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(3, (index) {
-                            final item = demoData[index];
-                            return _buildCard(context, item, cardSize, true);
-                          }),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildCard(context, demoData[0], cardSize, true),
+                            SizedBox(width: 20),
+                            _buildCard(context, demoData[1], cardSize, true),
+                          ],
                         ),
-                        SizedBox(height: spacing),
+                        SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            _buildCard(context, demoData[2], cardSize, true),
+                            SizedBox(width: 20),
                             _buildCard(context, demoData[3], cardSize, true),
-                            SizedBox(width: spacing),
-                            if (demoData.length > 4)
-                              _buildCard(context, demoData[4], cardSize, true),
                           ],
                         ),
                       ],

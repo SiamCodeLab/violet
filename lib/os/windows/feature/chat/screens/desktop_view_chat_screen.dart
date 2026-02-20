@@ -143,18 +143,33 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                 const SizedBox(height: 25),
                 Padding(
                   padding: EdgeInsets.only(left: isCollapsed ? 10 : 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: Image.asset(
-                        PathStrings.menuIcon,
-                        width: 20,
-                        height: 20,
-                        color: Colors.white,
+                  child: Row(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: Image.asset(
+                            PathStrings.menuIcon,
+                            width: 20,
+                            height: 20,
+                            color: Colors.white,
+                          ),
+                          onPressed: () =>
+                              setState(() => isCollapsed = !isCollapsed),
+                        ),
                       ),
-                      onPressed: () =>
-                          setState(() => isCollapsed = !isCollapsed),
-                    ),
+
+                      //email show
+                   !isCollapsed  ? Text(
+                        widget.controller.email.value,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ) : SizedBox.shrink()
+                    ],
                   ),
                 ),
 
@@ -287,6 +302,33 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                 else
                   Expanded(child: SizedBox()),
 
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                //   child: Container(
+                //     height: 45,
+                //     decoration: BoxDecoration(
+                //       color: AppColors.warning,
+                //       borderRadius: BorderRadius.circular(10),
+                //     ),
+                //     child: Row(
+                //       mainAxisAlignment: MainAxisAlignment.center,
+                //       children: [
+                //         Icon(Icons.person,size: 20,),
+                //         if (!isCollapsed) ...[
+                //           const SizedBox(width: 8),
+                //           Text(
+                //             widget.controller.email.value,
+                //             style: TextStyle(
+                //               color: Colors.black,
+                //               fontWeight: FontWeight.bold,
+                //               fontSize: 15,
+                //             ),
+                //           ),
+                //         ],
+                //       ],
+                //     ),
+                //   ),
+                // ),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: GestureDetector(

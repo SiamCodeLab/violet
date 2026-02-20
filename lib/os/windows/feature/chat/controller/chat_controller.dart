@@ -57,9 +57,9 @@ class ChatController extends GetxController {
   // ============================================
 
   @override
-  void onInit() async{
+  void onInit() async {
     super.onInit();
-    email.value = await StorageService.getUserEmail();
+    email.value = StorageService.getUserEmail();
     _scrollController = ScrollController();
   }
 
@@ -394,7 +394,7 @@ class ChatController extends GetxController {
         if (sessionId.value == id) {
           startNewChat();
         }
-
+        Get.back();
         SnackbarService.success('Chat deleted');
       } else {
         Console.error('Delete failed: ${response.data}');
