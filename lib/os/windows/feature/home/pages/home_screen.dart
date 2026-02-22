@@ -40,7 +40,8 @@ class HomeScreen extends StatelessWidget {
 
     // quick check for mobile layout
     bool isAndroid() {
-      return Theme.of(context).platform == TargetPlatform.android;
+      return Theme.of(context).platform == TargetPlatform.android ||
+          Theme.of(context).platform == TargetPlatform.iOS;
     }
 
     // ========== MOBILE VERSION ==========

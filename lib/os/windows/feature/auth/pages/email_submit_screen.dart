@@ -14,7 +14,9 @@ class EmailSubmitScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    bool isAndroid =
+        Theme.of(context).platform == TargetPlatform.android ||
+        Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
       appBar: AppBar(
