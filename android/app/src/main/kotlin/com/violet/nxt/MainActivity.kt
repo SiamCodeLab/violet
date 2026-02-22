@@ -1,4 +1,4 @@
-package com.violet.app
+package com.violet.nxt
 
 import io.flutter.embedding.android.FlutterActivity
 
