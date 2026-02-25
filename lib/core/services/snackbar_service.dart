@@ -19,13 +19,29 @@ class SnackbarService {
       defaultTargetPlatform == TargetPlatform.linux;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Responsive helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static double get _snackWidth {
+    const preferred = 700.0;
+    final screen = Get.width;
+    return screen < preferred + 32 ? screen - 32 : preferred;
+  }
+
+  static EdgeInsets get _snackMargin {
+    final w = _snackWidth;
+    final hPad = (Get.width - w) / 2;
+    return EdgeInsets.only(top: 60, left: hPad, right: hPad);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Colors — Apple HIG
   // ─────────────────────────────────────────────────────────────────────────
 
   static const _success = Color(0xFF34C759);
-  static const _error   = Color(0xFFFF3B30);
+  static const _error = Color(0xFFFF3B30);
   static const _warning = Color(0xFFFF9500);
-  static const _info    = Color(0xFF007AFF);
+  static const _info = Color(0xFF007AFF);
   static const _neutral = Color(0xFF8E8E93);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -78,9 +94,10 @@ class SnackbarService {
           icon: icon,
           accentColor: accentColor,
           isLoading: isLoading,
+          maxWidth: _snackWidth,
         ),
         snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.only(top: 100),
+        margin: _snackMargin,
         padding: EdgeInsets.zero,
         backgroundColor: Colors.transparent,
         boxShadows: const [],
@@ -90,7 +107,7 @@ class SnackbarService {
         forwardAnimationCurve: Curves.easeOutCubic,
         reverseAnimationCurve: Curves.easeInCubic,
         isDismissible: true,
-        maxWidth: 360,
+        maxWidth: _snackWidth,
       ),
     );
   }
@@ -116,13 +133,14 @@ class SnackbarService {
         backgroundColor: Colors.transparent,
         elevation: 0,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+        margin: EdgeInsets.fromLTRB(16, 0, 16, Get.height * 0.10),
         duration: duration,
         content: _AnimatedToast(
           message: message,
           icon: icon,
           accentColor: accentColor,
           isLoading: isLoading,
+          maxWidth: Get.width - 32,
         ),
       ),
     );
@@ -132,48 +150,36 @@ class SnackbarService {
   // Public API
   // ─────────────────────────────────────────────────────────────────────────
 
-  static void success(String message) => _show(
-        message,
-        accentColor: _success,
-        icon: Icons.check_circle_rounded,
-      );
+  static void success(String message) =>
+      _show(message, accentColor: _success, icon: Icons.check_circle_rounded);
 
   static void error(String message) => _show(
-        message,
-        accentColor: _error,
-        icon: Icons.cancel_rounded,
-        duration: const Duration(seconds: 4),
-      );
+    message,
+    accentColor: _error,
+    icon: Icons.cancel_rounded,
+    duration: const Duration(seconds: 4),
+  );
 
-  static void warning(String message) => _show(
-        message,
-        accentColor: _warning,
-        icon: Icons.error_rounded,
-      );
+  static void warning(String message) =>
+      _show(message, accentColor: _warning, icon: Icons.error_rounded);
 
-  static void info(String message) => _show(
-        message,
-        accentColor: _info,
-        icon: Icons.info_rounded,
-      );
+  static void info(String message) =>
+      _show(message, accentColor: _info, icon: Icons.info_rounded);
 
-  static void show(String message) => _show(
-        message,
-        accentColor: _neutral,
-        icon: Icons.notifications_rounded,
-      );
+  static void show(String message) =>
+      _show(message, accentColor: _neutral, icon: Icons.notifications_rounded);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Loading
   // ─────────────────────────────────────────────────────────────────────────
 
   static void loading(String message) => _show(
-        message,
-        accentColor: _neutral,
-        icon: Icons.notifications_rounded,
-        duration: const Duration(minutes: 5),
-        isLoading: true,
-      );
+    message,
+    accentColor: _neutral,
+    icon: Icons.notifications_rounded,
+    duration: const Duration(minutes: 5),
+    isLoading: true,
+  );
 
   static void hideLoading() {
     if (_isDesktop) {
@@ -377,7 +383,7 @@ class SnackbarService {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TOAST CARD — shared visual, used by both desktop and mobile
-// Icon + text are centered horizontally
+// Grows with text, capped at maxWidth, never overflows
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _ToastCard extends StatelessWidget {
@@ -386,72 +392,84 @@ class _ToastCard extends StatelessWidget {
     required this.icon,
     required this.accentColor,
     required this.isLoading,
+    required this.maxWidth,
   });
 
   final String message;
   final IconData icon;
   final Color accentColor;
   final bool isLoading;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.09),
-            blurRadius: 28,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      // ← Center + Row with mainAxisSize.min = icon & text hug together
-      //   then the whole thing is centered inside the 360px maxWidth card
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (isLoading)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color(0xFF007AFF),
-                  strokeCap: StrokeCap.round,
+    // Outer Row centers the pill horizontally inside GetX's full-width slot
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ConstrainedBox(
+          // Never wider than maxWidth, but shrinks to fit short text
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.09),
+                  blurRadius: 28,
+                  offset: const Offset(0, 6),
                 ),
-              )
-            else
-              Icon(icon, color: accentColor, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1C1C1E),
-                letterSpacing: -0.2,
-                height: 1.35,
-              ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
-          ],
+            child: Row(
+              // min = shrinks to hug text; Flexible below lets it wrap
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (isLoading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF007AFF),
+                      strokeCap: StrokeCap.round,
+                    ),
+                  )
+                else
+                  Icon(icon, color: accentColor, size: 20),
+                const SizedBox(width: 8),
+                // Flexible allows text to wrap when it hits maxWidth
+                Text(
+                  message,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1C1C1E),
+                    letterSpacing: -0.2,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ANIMATED TOAST — mobile, slides up from bottom
+// ANIMATED TOAST — mobile only, slides up from bottom
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _AnimatedToast extends StatefulWidget {
@@ -460,12 +478,14 @@ class _AnimatedToast extends StatefulWidget {
     required this.icon,
     required this.accentColor,
     required this.isLoading,
+    required this.maxWidth,
   });
 
   final String message;
   final IconData icon;
   final Color accentColor;
   final bool isLoading;
+  final double maxWidth;
 
   @override
   State<_AnimatedToast> createState() => _AnimatedToastState();
@@ -509,6 +529,7 @@ class _AnimatedToastState extends State<_AnimatedToast>
           icon: widget.icon,
           accentColor: widget.accentColor,
           isLoading: widget.isLoading,
+          maxWidth: widget.maxWidth,
         ),
       ),
     );
