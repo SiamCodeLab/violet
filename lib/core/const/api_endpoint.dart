@@ -1,6 +1,6 @@
 class ApiEndpoint {
-  static const String baseUrl = 'https://violate.dsrt321.online';
-  // static const String baseUrl = 'https://api.nextgen-careservices.co.uk';
+  // static const String baseUrl = 'https://violate.dsrt321.online';
+  static const String baseUrl = 'https://api.nextgen-careservices.co.uk';
 
 
   //Auth
@@ -14,4 +14,7 @@ class ApiEndpoint {
       '$baseUrl/api/services/prompt-templates/ai/';
   static const String chatbot = '$baseUrl/api/services/chat/';
   static const String chatSession = '$baseUrl/api/services/chat/sessions/';
+
+  //privacy policy
+  static const String privacyPolicy = 'https://sites.google.com/view/violet-app/home';
 }

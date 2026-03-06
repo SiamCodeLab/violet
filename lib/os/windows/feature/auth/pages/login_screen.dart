@@ -1,5 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:violet/core/const/api_endpoint.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/auth/controller/login_controller.dart';
@@ -13,6 +16,19 @@ class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
   final LoginController _controller = Get.put(LoginController());
+
+  Future<void> _launchUrl(BuildContext context) async {
+    final Uri url = Uri.parse(ApiEndpoint.privacyPolicy);
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open the link')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +136,28 @@ class LoginScreen extends StatelessWidget {
                                 ),
                               ),
                       ),
+                    ),
+                  ),
+
+                  //privacy policy
+                  SizedBox(height: 12),
+                  RichText(
+                    text: TextSpan(
+                      text:
+                          'By clicking the “Login” button, you accept the terms of the ',
+                      style: const TextStyle(color: Colors.black, fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: const TextStyle(
+                            color: Color(ThemeColor.primary),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => _launchUrl(context),
+                        ),
+                      ],
                     ),
                   ),
                 ],

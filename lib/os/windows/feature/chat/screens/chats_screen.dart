@@ -6,6 +6,7 @@ import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
+import 'package:violet/os/windows/feature/profile/pages/profile_page.dart';
 
 import '../controller/chat_controller.dart';
 
@@ -738,7 +739,7 @@ class _NavigationDrawer extends StatelessWidget {
                         icon: Icon(Icons.menu, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
-          
+
                       // Icon(Icons.email, color: AppColors.textWhite, size: 14),
                       SizedBox(width: 3),
                       Text(
@@ -759,6 +760,13 @@ class _NavigationDrawer extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => HomeScreen()),
                       );
                     },
+                  ),
+                  _DrawerItem(
+                    icon: PathStrings.userWhite,
+                    width: 24,
+                    height: 24,
+                    label: 'Profile',
+                    onTap: () => Get.to(ProfilePage()),
                   ),
                   _DrawerItem(
                     icon: PathStrings.newIcon,
@@ -838,43 +846,44 @@ class _NavigationDrawer extends StatelessWidget {
             ),
 
             // Logout Button
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    controller.signOut();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        PathStrings.logoutIcon,
-                        width: 20,
-                        color: Colors.black,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Sign out',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.all(20),
+            //   child: SizedBox(
+            //     width: double.infinity,
+            //     height: 48,
+            //     child: ElevatedButton(
+            //       onPressed: () {
+            //         Get.to(ProfilePage());
+            //       },
+            //       style: ElevatedButton.styleFrom(
+            //         backgroundColor: Colors.white,
+            //         shape: RoundedRectangleBorder(
+            //           borderRadius: BorderRadius.circular(10),
+            //         ),
+            //       ),
+            //       child: Row(
+            //         mainAxisAlignment: MainAxisAlignment.center,
+            //         children: [
+            //           // Image.asset(
+            //           //   PathStrings.logoutIcon,
+            //           //   width: 20,
+            //           //   color: Colors.black,
+            //           // ),
+            //           Icon(Icons.person),
+            //           const SizedBox(width: 10),
+            //           Text(
+            //             'Profile',
+            //             style: TextStyle(
+            //               fontSize: 16,
+            //               color: Colors.black,
+            //               fontWeight: FontWeight.bold,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -890,17 +899,21 @@ class _DrawerItem extends StatelessWidget {
   final String icon;
   final String label;
   final VoidCallback onTap;
+  final double width;
+  final double height;
 
   const _DrawerItem({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.width = 22,
+    this.height = 22,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Image.asset(icon, width: 22, height: 22),
+      leading: Image.asset(icon, width: width, height: height),
       title: Text(label, style: TextStyle(color: Colors.white, fontSize: 16)),
       onTap: onTap,
     );
