@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/utils/console.dart';
+import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════════
 /// API RESPONSE WRAPPER
@@ -340,6 +342,11 @@ class ApiService {
     if (statusCode >= 200 && statusCode < 300) {
       Console.success('API Success');
       return ApiResponse(success: true, data: data, statusCode: statusCode);
+    } else if (statusCode == 401) {
+      Console.error('API Error: $data');
+      Get.to(() => LoginScreen());
+      SnackbarService.error('Please login again');
+      return ApiResponse(success: false, data: data, statusCode: statusCode);
     }
 
     // Error responses

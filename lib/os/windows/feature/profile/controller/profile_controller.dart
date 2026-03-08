@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import 'package:violet/core/const/api_endpoint.dart';
 import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
+import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/auth/controller/login_controller.dart';
-import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 
 class ProfileController extends GetxController {
   //observables
@@ -38,6 +38,11 @@ class ProfileController extends GetxController {
 
   Future<void> deleteAccouont() async {
     try {
+      //  Debug — verify values before sending
+      Console.debug('Password: "${passwordController.text}"');
+      Console.debug('Confirm: "${confirmPasswordController.text}"');
+      Console.debug('Token: "${StorageService.getAccessToken()}"');
+      isLoading.value = true;
       final response = await ApiService.deleteAuth(
         ApiEndpoint.deleteAccount,
         body: {
@@ -46,10 +51,11 @@ class ProfileController extends GetxController {
         },
       );
 
-      if (response.statusCode == 200 || response.statusCode == 204) {
+      if (response.statusCode == 204) {
         Console.success('Account deleted');
+        passwordController.clear();
+        confirmPasswordController.clear();
         signOut();
-        Get.to(() => LoginScreen());
       } else {
         Console.error('Delete failed: ${response.data}');
         SnackbarService.error('Failed to delete account');

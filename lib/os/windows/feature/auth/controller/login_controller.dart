@@ -54,12 +54,18 @@ class LoginController extends GetxService {
         Console.info(data['access']);
         Console.success('User signed in successfully');
         SnackbarService.success('User signed in successfully');
+        loginEmailController.clear();
+        loginPasswordController.clear();
         // Navigate to Home
         Get.to(() => HomeScreen());
         isLoading.value = false;
       } else {
         isLoading.value = false;
-        SnackbarService.error('Error: ${response.data['detail']}');
+        var error = response.data['detail'];
+        error == 'No active account found with the given credentials'
+            ? error = 'No account found '
+            : error;
+        SnackbarService.error(error);
         Console.error('Error: ${response.data['detail']}');
       }
     } catch (e) {

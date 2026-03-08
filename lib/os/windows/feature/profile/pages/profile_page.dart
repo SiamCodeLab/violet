@@ -53,7 +53,7 @@ class ProfilePage extends StatelessWidget {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
                     }
-                    if (value.length < 6) {
+                    if (value.length < 4) {
                       return 'Password must be at least 6 characters';
                     }
                     return null;
@@ -101,8 +101,6 @@ class ProfilePage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  controller.passwordController.clear();
-                  controller.confirmPasswordController.clear();
                   Navigator.pop(context);
                   controller.deleteAccouont();
                 }
@@ -271,12 +269,16 @@ class ProfilePage extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  "Delete Account",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textWhite,
+                child: Obx(
+                  () => Text(
+                    controller.isLoading.value
+                        ? 'Deleting...'
+                        : 'Delete Account',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textWhite,
+                    ),
                   ),
                 ),
               ),
