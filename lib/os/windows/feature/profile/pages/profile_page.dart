@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/get_instance.dart';
+import 'package:get/state_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:violet/core/const/api_endpoint.dart';
 import 'package:violet/core/const/app_colors.dart';
@@ -10,24 +10,111 @@ import 'package:violet/os/windows/feature/profile/controller/profile_controller.
 
 class ProfilePage extends StatelessWidget {
   ProfilePage({super.key});
+
+  final controller = Get.put(ProfileController());
+
   void _showDeleteDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    bool obscurePassword = true;
+    bool obscureConfirm = true;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Account'),
-        content: const Text('Are you sure you want to delete your account?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          title: const Text('Delete Account'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Are you sure you want to delete your account?'),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: controller.passwordController,
+                  obscureText: obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => obscurePassword = !obscurePassword),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: controller.confirmPasswordController,
+                  obscureText: obscureConfirm,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => obscureConfirm = !obscureConfirm),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != controller.passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () {
+                controller.passwordController.clear();
+                controller.confirmPasswordController.clear();
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  controller.passwordController.clear();
+                  controller.confirmPasswordController.clear();
+                  Navigator.pop(context);
+                  controller.deleteAccouont();
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -68,8 +155,6 @@ class ProfilePage extends StatelessWidget {
       ).showSnackBar(const SnackBar(content: Text('Could not open the link')));
     }
   }
-
-  final controller = Get.put(ProfileController());
 
   @override
   Widget build(BuildContext context) {
@@ -118,26 +203,28 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  ListTile(
-                    leading: Image.asset(PathStrings.organisation, width: 20),
-                    title: RichText(
-                      text: TextSpan(
-                        text: 'Organization: ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textBlack,
-                        ),
-                        children: <TextSpan>[
-                          TextSpan(
-                            text: 'Violet',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
+                  Obx(
+                    () => ListTile(
+                      leading: Image.asset(PathStrings.organisation, width: 20),
+                      title: RichText(
+                        text: TextSpan(
+                          text: 'Organization: ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textBlack,
                           ),
-                        ],
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: controller.orgaization.value,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -146,7 +233,7 @@ class ProfilePage extends StatelessWidget {
                     child: ListTile(
                       leading: Image.asset(PathStrings.privacy, width: 20),
                       title: Text(
-                        "Terms and privacy settings",
+                        "Terms and privacy policy",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
