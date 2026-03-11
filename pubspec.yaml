@@ -8,7 +8,7 @@ version: 1.0.0+2
 msix_config:
   display_name: Violet
   publisher_display_name: Your Name
-  identity_name: com.gfdg.myapp
+  identity_name: com.violet.app
   msix_version: 1.0.0.0
   logo_path: assets/images/branding/logo.png
 

@@ -1,5 +1,5 @@
 class PathStrings {
-  static const String logoPath = 'assets/images/branding/logo.png';
+  static const String logoPath = 'assets/images/branding/app_logo.png';
 
   // icons
   static const String menuIcon = 'assets/icons/menu.png';
