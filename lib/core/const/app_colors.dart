@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AppColors {
+class  AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
   // Primary Brand Colors
   // ═══════════════════════════════════════════════════════════════════════════

@@ -6,6 +6,7 @@ import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/controller/chat_controller.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
+import 'package:violet/os/windows/feature/chat/widgets/profile_popup.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 
 class DesktopViewChatScreen extends StatefulWidget {
@@ -160,15 +161,17 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                       ),
 
                       //email show
-                   !isCollapsed  ? Text(
-                        widget.controller.email.value,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ) : SizedBox.shrink()
+                      !isCollapsed
+                          ? Text(
+                              widget.controller.email.value,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            )
+                          : SizedBox.shrink(),
                     ],
                   ),
                 ),
@@ -216,6 +219,15 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                     MaterialPageRoute(builder: (_) => HomeScreen()),
                   );
                 }),
+
+                _buildSidebarItem(
+                  PathStrings.userWhite,
+                  "Profile",
+                  "profile",
+                  () {
+                    DesktopProfilePopup.show(context);
+                  },
+                ),
 
                 _buildSidebarItem(
                   PathStrings.newIcon,

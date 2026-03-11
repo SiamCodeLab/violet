@@ -7,6 +7,10 @@ class PathStrings {
   static const String newIcon = 'assets/icons/new.png';
   static const String logoutIcon = 'assets/icons/logout.png';
   static const String mobileMenuIcon = 'assets/icons/mobile_menu.png';
+  static const String userIcon = 'assets/icons/user.png';
+  static const String privacy = 'assets/icons/privacy.png';
+  static const String organisation = 'assets/icons/organisation.png';
+  static const String userWhite = 'assets/icons/user_white.png';
 
   // Loading Icon icons
   static const String trainginIcon = 'assets/icons/loading_icon/edu.png';

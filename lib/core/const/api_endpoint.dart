@@ -14,4 +14,11 @@ class ApiEndpoint {
       '$baseUrl/api/services/prompt-templates/ai/';
   static const String chatbot = '$baseUrl/api/services/chat/';
   static const String chatSession = '$baseUrl/api/services/chat/sessions/';
+
+  //Profile
+  static const String profile = '$baseUrl/api/auth/user/details/';
+  static const String deleteAccount = '$baseUrl/api/auth/account-delete/';
+
+  //privacy policy
+  static const String privacyPolicy = 'https://sites.google.com/view/violet-app/home';
 }
