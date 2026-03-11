@@ -35,6 +35,8 @@ dependencies:
   # Messages Format
   flutter_markdown_plus: ^1.0.7
   url_launcher: ^6.3.2
+  launcher_name: ^1.0.2
+
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +52,9 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/images/branding/logo.png" # your icon image path
+
+launcher_name:
+  default: "Violet"
 
 
 # For information on the generic Dart part of this file, see the
