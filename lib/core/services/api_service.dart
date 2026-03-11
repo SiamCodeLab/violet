@@ -39,7 +39,7 @@ class ApiService {
   // Timeout Duration
   // ─────────────────────────────────────────────────────────────────────────
 
-  static const Duration _timeout = Duration(seconds: 30);
+  static const Duration _timeout = Duration(seconds: 60);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Headers
@@ -345,6 +345,7 @@ class ApiService {
     } else if (statusCode == 401) {
       Console.error('API Error: $data');
       Get.to(() => LoginScreen());
+      StorageService.clearAll();
       SnackbarService.error('Please login again');
       return ApiResponse(success: false, data: data, statusCode: statusCode);
     }
@@ -382,7 +383,7 @@ class ApiService {
     if (error is SocketException) {
       message = 'No internet connection';
     } else if (error is TimeoutException) {
-      message = 'Server not responding. Please try again.';
+      message = 'Request timed out';
     } else if (error is FormatException) {
       message = 'Invalid response format';
     } else if (error is HttpException) {
