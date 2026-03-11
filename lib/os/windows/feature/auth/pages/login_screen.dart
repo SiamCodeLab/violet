@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ← added for KeyEvent
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:violet/core/const/api_endpoint.dart';
@@ -57,6 +58,8 @@ class LoginScreen extends StatelessWidget {
                   AuthLogo(isAndroid: isAndroid),
                   AuthTitle(isAndroid: isAndroid, title: 'Log in to continue '),
                   const SizedBox(height: 50),
+
+                  // Email field
                   SInputField(
                     controller: _controller.loginEmailController,
                     keyboardType: TextInputType.emailAddress,
@@ -64,13 +67,29 @@ class LoginScreen extends StatelessWidget {
                     hintText: 'Enter your email address',
                   ),
                   const SizedBox(height: 20),
-                  SInputField(
-                    controller: _controller.loginPasswordController,
-                    keyboardType: TextInputType.visiblePassword,
-                    isSuffixIcon: true,
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
+
+                  // Password field — Enter key triggers signIn on desktop
+                  Focus(
+                    onKeyEvent: (node, event) {
+                      if (!isAndroid &&
+                          event is KeyDownEvent &&
+                          event.logicalKey == LogicalKeyboardKey.enter) {
+                        _controller.signIn();
+                        return KeyEventResult.handled;
+                      }
+                      return KeyEventResult.ignored;
+                    },
+                    child: SInputField(
+                      controller: _controller.loginPasswordController,
+                      keyboardType: TextInputType.visiblePassword,
+                      isSuffixIcon: true,
+                      obscureText: true, // ← password hidden by default
+                      labelText: 'Password',
+                      hintText: 'Enter your password',
+                      onSubmitted: (_) => _controller.signIn(), // ← mobile "Done"
+                    ),
                   ),
+
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -125,10 +144,10 @@ class LoginScreen extends StatelessWidget {
                       ),
                       child: Obx(
                         () => _controller.isLoading.value
-                            ? CircularProgressIndicator.adaptive(
+                            ? const CircularProgressIndicator.adaptive(
                                 backgroundColor: Colors.white,
                               )
-                            : Text(
+                            : const Text(
                                 'Login',
                                 style: TextStyle(
                                   fontSize: 18,
@@ -139,12 +158,12 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  //privacy policy
-                  SizedBox(height: 12),
+                  // Privacy policy
+                  const SizedBox(height: 12),
                   RichText(
                     text: TextSpan(
                       text:
-                          'By clicking the “Login” button, you accept the terms of the ',
+                          'By clicking the "Login" button, you accept the terms of the ',
                       style: const TextStyle(color: Colors.black, fontSize: 14),
                       children: [
                         TextSpan(
