@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/auth/controller/otp_submit_controller.dart';
@@ -14,6 +15,7 @@ class OtpSubmitScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Detect mobile platform to apply responsive layout adjustments
     bool isAndroid =
         Theme.of(context).platform == TargetPlatform.android ||
         Theme.of(context).platform == TargetPlatform.iOS;
@@ -31,59 +33,71 @@ class OtpSubmitScreen extends StatelessWidget {
       ),
       backgroundColor: Color(ThemeColor.backgroundColor),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isAndroid ? 20 : 100,
-            vertical: isAndroid ? 20 : 50,
-          ),
-          child: Align(
-            alignment: isAndroid ? Alignment.topCenter : Alignment.center,
-            child: SizedBox(
-              width: 650,
-              child: Column(
-                mainAxisAlignment: isAndroid
-                    ? MainAxisAlignment.start
-                    : MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  AuthLogo(isAndroid: isAndroid),
-                  AuthTitle(
-                    isAndroid: isAndroid,
-                    title: 'Enter verification code',
-                  ),
-                  const SizedBox(height: 50),
-                  SInputField(
-                    controller: _controller.otp,
-                    keyboardType: TextInputType.number,
-                    labelText: 'OTP',
-                    hintText: 'Enter the OTP sent to your email',
-                  ),
-                  const SizedBox(height: 20),
-                  Obx(
-                    () => SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () => _controller.verifyOtp(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(ThemeColor.primary),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+        // Intercepts keyboard events at the screen level to support
+        // Enter key submission without requiring explicit button click
+        child: KeyboardListener(
+          focusNode: FocusNode(),
+          autofocus: true,
+          onKeyEvent: (KeyEvent event) {
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.enter) {
+              _controller.verifyOtp();
+            }
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isAndroid ? 20 : 100,
+              vertical: isAndroid ? 20 : 50,
+            ),
+            child: Align(
+              alignment: isAndroid ? Alignment.topCenter : Alignment.center,
+              child: SizedBox(
+                width: 650,
+                child: Column(
+                  mainAxisAlignment: isAndroid
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    AuthLogo(isAndroid: isAndroid),
+                    AuthTitle(
+                      isAndroid: isAndroid,
+                      title: 'Enter verification code',
+                    ),
+                    const SizedBox(height: 50),
+                    SInputField(
+                      controller: _controller.otp,
+                      keyboardType: TextInputType.number,
+                      labelText: 'OTP',
+                      hintText: 'Enter the OTP sent to your email',
+                    ),
+                    const SizedBox(height: 20),
+                    Obx(
+                      () => SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () => _controller.verifyOtp(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(ThemeColor.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                        ),
-                        child: _controller.isLoading.value
-                            ? const CircularProgressIndicator()
-                            : const Text(
-                                'Send OTP',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
+                          child: _controller.isLoading.value
+                              ? const CircularProgressIndicator()
+                              : const Text(
+                                  'Submit',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
