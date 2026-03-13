@@ -206,7 +206,7 @@ class ProfilePage extends StatelessWidget {
                       leading: Image.asset(PathStrings.organisation, width: 20),
                       title: RichText(
                         text: TextSpan(
-                          text: 'Organization: ',
+                          text: 'Organisation: ',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,

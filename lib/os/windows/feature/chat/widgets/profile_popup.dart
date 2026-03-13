@@ -137,7 +137,7 @@ class _DesktopProfileDialog extends StatelessWidget {
                               ),
                               title: RichText(
                                 text: TextSpan(
-                                  text: 'Organization: ',
+                                  text: 'Organisation: ',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
