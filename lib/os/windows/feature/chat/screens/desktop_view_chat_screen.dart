@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
+import 'package:violet/core/services/flutter_markdown_view.dart';
+import 'package:violet/core/services/markdown_web_view.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/controller/chat_controller.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
@@ -33,12 +34,10 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
   @override
   void initState() {
     super.initState();
-
     if (Get.isRegistered<ChatController>()) {
       Get.delete<ChatController>();
     }
     controller = Get.put(ChatController());
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setBotId(widget.botid);
     });
@@ -57,7 +56,7 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
           ),
           Expanded(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage('assets/images/bg.jpg'),
                   fit: BoxFit.cover,
@@ -74,8 +73,8 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
                           ),
                         );
                       }
-
-                      return controller.currentMessages.isEmpty
+                      return controller.currentMessages.isEmpty &&
+                              !controller.isSending.value
                           ? _DesktopEmptyState(image: widget.initialQuery)
                           : _DesktopChatMessages(
                               controller: controller,
@@ -95,7 +94,7 @@ class _DesktopViewChatScreenState extends State<DesktopViewChatScreen> {
 }
 
 // ============================================
-// SIDEBAR WIDGET
+// SIDEBAR
 // ============================================
 
 class _DesktopSidebar extends StatefulWidget {
@@ -116,7 +115,6 @@ class _DesktopSidebar extends StatefulWidget {
 class _DesktopSidebarState extends State<_DesktopSidebar> {
   bool isCollapsed = false;
   String? hoveredItem;
-
   String? hoveredSidebarItem;
   final ScrollController _sidebarScrollController = ScrollController();
 
@@ -142,6 +140,8 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
             child: Column(
               children: [
                 const SizedBox(height: 25),
+
+                // Top bar - menu icon + email
                 Padding(
                   padding: EdgeInsets.only(left: isCollapsed ? 10 : 16),
                   child: Row(
@@ -153,30 +153,33 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                             PathStrings.menuIcon,
                             width: 20,
                             height: 20,
+                            cacheWidth: 20, // ✅ fixed memory warning
+                            cacheHeight: 20,
                             color: Colors.white,
                           ),
                           onPressed: () =>
                               setState(() => isCollapsed = !isCollapsed),
                         ),
                       ),
-
-                      //email show
-                      !isCollapsed
-                          ? Text(
+                      if (!isCollapsed)
+                        Expanded(
+                          child: Obx(
+                            () => Text(
                               widget.controller.email.value,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                               overflow: TextOverflow.ellipsis,
-                            )
-                          : SizedBox.shrink(),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
 
-                // Current Bot Info
+                // Current bot info
                 if (!isCollapsed)
                   Container(
                     margin: const EdgeInsets.symmetric(
@@ -194,13 +197,15 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                           widget.loadingIcon,
                           width: 18,
                           height: 18,
+                          cacheWidth: 18, // ✅ fixed memory warning
+                          cacheHeight: 18,
                           color: Colors.white,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             widget.botTitle,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -224,9 +229,7 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                   PathStrings.userWhite,
                   "Profile",
                   "profile",
-                  () {
-                    DesktopProfilePopup.show(context);
-                  },
+                  () => DesktopProfilePopup.show(context),
                 ),
 
                 _buildSidebarItem(
@@ -241,6 +244,7 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
 
                 const SizedBox(height: 8),
 
+                // Chat history label
                 if (!isCollapsed)
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -252,7 +256,7 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                       child: Obx(
                         () => Text(
                           "Chat History (${widget.controller.currentBotSessions.length})",
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -262,18 +266,18 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                     ),
                   ),
 
+                // Session list
                 if (!isCollapsed)
                   Expanded(
                     child: Obx(() {
                       if (widget.controller.isSessionLoading.value) {
-                        return Center(
+                        return const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         );
                       }
-
                       if (widget.controller.currentBotSessions.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(16),
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
                           child: Text(
                             'No chats yet',
                             style: TextStyle(
@@ -283,7 +287,6 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                           ),
                         );
                       }
-
                       return ListView.builder(
                         controller: _sidebarScrollController,
                         itemCount: widget.controller.currentBotSessions.length,
@@ -293,7 +296,6 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                           final isActive =
                               widget.controller.sessionId.value ==
                               session['id'];
-
                           return _buildHistoryItem(
                             "history_$index",
                             Icons.chat_bubble_outline,
@@ -312,35 +314,9 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                     }),
                   )
                 else
-                  Expanded(child: SizedBox()),
+                  const Expanded(child: SizedBox()),
 
-                // Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 16),
-                //   child: Container(
-                //     height: 45,
-                //     decoration: BoxDecoration(
-                //       color: AppColors.warning,
-                //       borderRadius: BorderRadius.circular(10),
-                //     ),
-                //     child: Row(
-                //       mainAxisAlignment: MainAxisAlignment.center,
-                //       children: [
-                //         Icon(Icons.person,size: 20,),
-                //         if (!isCollapsed) ...[
-                //           const SizedBox(width: 8),
-                //           Text(
-                //             widget.controller.email.value,
-                //             style: TextStyle(
-                //               color: Colors.black,
-                //               fontWeight: FontWeight.bold,
-                //               fontSize: 15,
-                //             ),
-                //           ),
-                //         ],
-                //       ],
-                //     ),
-                //   ),
-                // ),
+                // Sign out button
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: GestureDetector(
@@ -354,10 +330,15 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset(PathStrings.logoutIcon, width: 18),
+                          Image.asset(
+                            PathStrings.logoutIcon,
+                            width: 18,
+                            cacheWidth: 18, // ✅ fixed memory warning
+                            cacheHeight: 18,
+                          ),
                           if (!isCollapsed) ...[
                             const SizedBox(width: 8),
-                            Text(
+                            const Text(
                               "Sign out",
                               style: TextStyle(
                                 color: Colors.black,
@@ -386,7 +367,6 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
     VoidCallback onTap,
   ) {
     final isHovered = hoveredSidebarItem == id;
-
     return MouseRegion(
       onEnter: (_) => setState(() => hoveredSidebarItem = id),
       onExit: (_) => setState(() => hoveredSidebarItem = null),
@@ -408,13 +388,15 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
             iconPath,
             width: 20,
             height: 20,
+            cacheWidth: 20, // ✅ fixed memory warning
+            cacheHeight: 20,
             color: Colors.white.withOpacity(isHovered ? 1 : 0.8),
           ),
           title: isCollapsed
               ? null
               : Text(
                   label,
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
                 ),
           onTap: onTap,
         ),
@@ -431,7 +413,6 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
     VoidCallback onDelete,
   ) {
     final isHovered = hoveredItem == id;
-
     return MouseRegion(
       onEnter: (_) => setState(() => hoveredItem = id),
       onExit: (_) => setState(() => hoveredItem = null),
@@ -449,7 +430,7 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white, fontSize: 14),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
           trailing: isHovered
               ? IconButton(
@@ -471,14 +452,13 @@ class _DesktopSidebarState extends State<_DesktopSidebar> {
 
 class _DesktopEmptyState extends StatelessWidget {
   final String image;
-
   const _DesktopEmptyState({required this.image});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: 120),
+        const SizedBox(height: 120),
         Image(image: AssetImage(image), width: 150),
       ],
     );
@@ -503,37 +483,46 @@ class _DesktopChatMessages extends StatelessWidget {
     return Obx(() {
       final messages = controller.currentMessages;
       final isSending = controller.isSending.value;
+      final streamingText = controller.streamingText.value;
+      final isStreaming = controller.isStreaming.value;
 
       return Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
-          child: SelectionArea(
-            child: ListView.builder(
-              controller: controller.scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              itemCount: messages.length + (isSending ? 1 : 0),
-              itemBuilder: (_, index) {
-                if (index == messages.length && isSending) {
-                  return _DesktopLoadingBubble(loadingIcon: loadingIcon);
+          // ✅ NO SelectionArea — WebView handles native rich text selection
+          child: ListView.builder(
+            controller: controller.scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            itemCount: messages.length + (isSending ? 1 : 0),
+            itemBuilder: (_, index) {
+              // Last item — streaming bubble or loading dots
+              if (index == messages.length && isSending) {
+                if (isStreaming && streamingText.isNotEmpty) {
+                  return _DesktopMessageBubble(
+                    message: streamingText,
+                    isUser: false,
+                    fileName: null,
+                    isStreaming: true,
+                  );
                 }
+                return _DesktopLoadingBubble(loadingIcon: loadingIcon);
+              }
 
-                final chat = messages[index];
-                final isUser = chat['sender'] == 'user';
-
-                return _DesktopMessageBubble(
-                  message: chat['message'] ?? '',
-                  isUser: isUser,
-                  fileName: chat['file_name'],
-                );
-              },
-            ),
+              final chat = messages[index];
+              final isUser = chat['sender'] == 'user';
+              return _DesktopMessageBubble(
+                message: chat['message'] ?? '',
+                isUser: isUser,
+                fileName: chat['file_name'],
+                isStreaming: false,
+              );
+            },
           ),
         ),
       );
     });
   }
 }
-
 // ============================================
 // MESSAGE BUBBLE
 // ============================================
@@ -542,27 +531,21 @@ class _DesktopMessageBubble extends StatelessWidget {
   final String message;
   final bool isUser;
   final String? fileName;
+  final bool isStreaming;
 
   const _DesktopMessageBubble({
     required this.message,
     required this.isUser,
     this.fileName,
+    this.isStreaming = false,
   });
 
-  /// Process the message to handle escaped characters from API
   String _processMarkdown(String text) {
-    String processed = text;
-
-    // Replace literal \n with actual newlines
-    processed = processed.replaceAll('\\n', '\n');
-
-    // Replace literal \t with actual tabs
-    processed = processed.replaceAll('\\t', '\t');
-
-    // Handle escaped quotes
-    processed = processed.replaceAll('\\"', '"');
-
-    return processed.trim();
+    return text
+        .replaceAll('\\n', '\n')
+        .replaceAll('\\t', '\t')
+        .replaceAll('\\"', '"')
+        .trim();
   }
 
   @override
@@ -572,18 +555,19 @@ class _DesktopMessageBubble extends StatelessWidget {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 800),
+        constraints: const BoxConstraints(maxWidth: 800),
         child: Column(
           crossAxisAlignment: isUser
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
+            // Sender label
             Text(
               isUser ? "You" : "Violet",
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
 
-            // File attachment display
+            // File attachment chip
             if (fileName != null && fileName!.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(top: 4, bottom: 4),
@@ -622,175 +606,71 @@ class _DesktopMessageBubble extends StatelessWidget {
                 ),
               ),
 
-            // Message Container
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              padding: const EdgeInsets.all(16),
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.80,
-                minWidth: 100,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(9),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
+            // If user, normal container
+            if (isUser)
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.all(16),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.80,
+                  minWidth: 100,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: SelectableText(
+                  processedMessage,
+                  style: const TextStyle(fontSize: 15, height: 1.5),
+                ),
+              )
+            else
+              SelectionArea(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.all(16),
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.80,
+                    minWidth: 100,
                   ),
-                ],
-              ),
-              child: isUser
-                  ? Text(
-                      processedMessage,
-                      style: TextStyle(fontSize: 15, height: 1.5),
-                    )
-                  : MarkdownBody(
-                      data: processedMessage,
-                      shrinkWrap: true,
-                      styleSheet: MarkdownStyleSheet(
-                        // Paragraph
-                        p: const TextStyle(
-                          fontSize: 15,
-                          height: 1.6,
-                          color: Colors.black87,
-                        ),
-
-                        // Headers
-                        h1: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          height: 1.4,
-                        ),
-                        h2: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          height: 1.4,
-                        ),
-                        h3: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          height: 1.4,
-                        ),
-                        h4: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          height: 1.4,
-                        ),
-                        h5: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          height: 1.4,
-                        ),
-                        h6: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black54,
-                          height: 1.4,
-                        ),
-
-                        // Bold & Italic
-                        strong: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                        em: const TextStyle(
-                          fontStyle: FontStyle.italic,
-                          color: Colors.black87,
-                        ),
-
-                        // Lists
-                        listBullet: TextStyle(
-                          fontSize: 15,
-                          color: Color(ThemeColor.primary),
-                        ),
-                        listIndent: 24.0,
-
-                        // Blockquote
-                        blockquote: TextStyle(
-                          fontSize: 15,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[700],
-                          height: 1.5,
-                        ),
-                        blockquoteDecoration: BoxDecoration(
-                          border: Border(
-                            left: BorderSide(
-                              color: Color(ThemeColor.primary),
-                              width: 4,
-                            ),
-                          ),
-                        ),
-                        blockquotePadding: const EdgeInsets.only(
-                          left: 16,
-                          top: 8,
-                          bottom: 8,
-                        ),
-
-                        // Code
-                        code: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'monospace',
-                          backgroundColor: Colors.grey[200],
-                          color: Colors.red[700],
-                        ),
-                        codeblockDecoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        codeblockPadding: const EdgeInsets.all(12),
-
-                        // Horizontal rule
-                        horizontalRuleDecoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Colors.grey[300]!, width: 1),
-                          ),
-                        ),
-
-                        // Table
-                        tableHead: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        tableBody: const TextStyle(fontSize: 14),
-                        tableBorder: TableBorder.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                        tableCellsPadding: const EdgeInsets.all(8),
-
-                        // Links
-                        a: TextStyle(
-                          color: Color(ThemeColor.primary),
-                          decoration: TextDecoration.underline,
-                        ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(9),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-            ),
+                    ],
+                  ),
+                  child: FlutterMarkdownView(markdownText: processedMessage),
+                ),
+              ),
 
-            // Copy button for bot messages
-            if (!isUser)
-              IconButton(
-                icon: Icon(Icons.copy_rounded, size: 20, color: Colors.black),
-                onPressed: () {
-                  // Remove markdown symbols for clean copy
-                  final cleanMessage = processedMessage
-                      .replaceAll(RegExp(r'\*\*'), '')
-                      .replaceAll(RegExp(r'\*'), '');
-                  Clipboard.setData(ClipboardData(text: cleanMessage));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Copied to clipboard'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
+            // Copy button — only for bot, hidden while streaming
+            if (!isUser && !isStreaming)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.copy_rounded,
+                    size: 20,
+                    color: Colors.black54,
+                  ),
+                  tooltip: 'Copy with formatting',
+                  onPressed: () => Get.find<ChatController>().copyAsRichText(
+                    processedMessage,
+                    context,
+                  ),
+                ),
               ),
           ],
         ),
@@ -820,7 +700,6 @@ class _DesktopMessageBubble extends StatelessWidget {
 
 class _DesktopLoadingBubble extends StatelessWidget {
   final String loadingIcon;
-
   const _DesktopLoadingBubble({required this.loadingIcon});
 
   @override
@@ -828,6 +707,7 @@ class _DesktopLoadingBubble extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.5),
@@ -837,7 +717,12 @@ class _DesktopLoadingBubble extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(loadingIcon, width: 15),
+            Image.asset(
+              loadingIcon,
+              width: 15,
+              cacheWidth: 15, // ✅ fixed memory warning
+              cacheHeight: 15,
+            ),
             const SizedBox(width: 8),
             AnimatedThinkingText(),
           ],
@@ -848,12 +733,11 @@ class _DesktopLoadingBubble extends StatelessWidget {
 }
 
 // ============================================
-// BOTTOM SECTION - WITH FILE PREVIEW
+// BOTTOM SECTION
 // ============================================
 
 class _DesktopBottomSection extends StatelessWidget {
   final ChatController controller;
-
   const _DesktopBottomSection({required this.controller});
 
   @override
@@ -866,12 +750,8 @@ class _DesktopBottomSection extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
               children: [
-                // File Attachment Preview
                 _DesktopFileAttachmentPreview(controller: controller),
-
-                // Input Field
                 _DesktopFloatingInput(controller: controller),
-
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 48),
@@ -895,19 +775,17 @@ class _DesktopBottomSection extends StatelessWidget {
 }
 
 // ============================================
-// FILE ATTACHMENT PREVIEW - DESKTOP
+// FILE ATTACHMENT PREVIEW
 // ============================================
 
 class _DesktopFileAttachmentPreview extends StatelessWidget {
   final ChatController controller;
-
   const _DesktopFileAttachmentPreview({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final file = controller.selectedFile.value;
-
       if (file == null) return const SizedBox.shrink();
 
       return Container(
@@ -928,7 +806,6 @@ class _DesktopFileAttachmentPreview extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // File Icon
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -941,10 +818,7 @@ class _DesktopFileAttachmentPreview extends StatelessWidget {
                 size: 22,
               ),
             ),
-
             const SizedBox(width: 12),
-
-            // File Name and Size
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,7 +826,7 @@ class _DesktopFileAttachmentPreview extends StatelessWidget {
                 children: [
                   Text(
                     file.name,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -968,10 +842,7 @@ class _DesktopFileAttachmentPreview extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(width: 12),
-
-            // Remove Button
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
@@ -1008,12 +879,11 @@ class _DesktopFileAttachmentPreview extends StatelessWidget {
 }
 
 // ============================================
-// FLOATING INPUT - DESKTOP
+// FLOATING INPUT
 // ============================================
 
 class _DesktopFloatingInput extends StatelessWidget {
   final ChatController controller;
-
   const _DesktopFloatingInput({required this.controller});
 
   void _handleSend() {
@@ -1039,7 +909,6 @@ class _DesktopFloatingInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // File Pick Button
           IconButton(
             icon: Icon(
               Icons.add,
