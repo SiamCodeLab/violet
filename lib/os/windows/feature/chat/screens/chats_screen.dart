@@ -146,25 +146,27 @@ class _ChatMessages extends StatelessWidget {
       final messages = controller.currentMessages;
       final isSending = controller.isSending.value;
 
-      return ListView.builder(
-        controller: controller.scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        itemCount: messages.length + (isSending ? 1 : 0),
-        itemBuilder: (_, index) {
-          // Thinking bubble
-          if (index == messages.length && isSending) {
-            return _ThinkingBubble(loadingIcon: loadingIcon);
-          }
+      return SelectionArea(
+        child: ListView.builder(
+          controller: controller.scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          itemCount: messages.length + (isSending ? 1 : 0),
+          itemBuilder: (_, index) {
+            // Thinking bubble
+            if (index == messages.length && isSending) {
+              return _ThinkingBubble(loadingIcon: loadingIcon);
+            }
 
-          final chat = messages[index];
-          final isUser = chat['sender'] == 'user';
+            final chat = messages[index];
+            final isUser = chat['sender'] == 'user';
 
-          return _MessageBubble(
-            message: chat['message'] ?? '',
-            isUser: isUser,
-            fileName: chat['file_name'],
-          );
-        },
+            return _MessageBubble(
+              message: chat['message'] ?? '',
+              isUser: isUser,
+              fileName: chat['file_name'],
+            );
+          },
+        ),
       );
     });
   }
@@ -287,7 +289,6 @@ class _MessageBubble extends StatelessWidget {
                   )
                 : MarkdownBody(
                     data: processedMessage,
-                    selectable: true,
                     shrinkWrap: true,
                     styleSheet: MarkdownStyleSheet(
                       // Paragraph

@@ -507,24 +507,26 @@ class _DesktopChatMessages extends StatelessWidget {
       return Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
-          child: ListView.builder(
-            controller: controller.scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            itemCount: messages.length + (isSending ? 1 : 0),
-            itemBuilder: (_, index) {
-              if (index == messages.length && isSending) {
-                return _DesktopLoadingBubble(loadingIcon: loadingIcon);
-              }
+          child: SelectionArea(
+            child: ListView.builder(
+              controller: controller.scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              itemCount: messages.length + (isSending ? 1 : 0),
+              itemBuilder: (_, index) {
+                if (index == messages.length && isSending) {
+                  return _DesktopLoadingBubble(loadingIcon: loadingIcon);
+                }
 
-              final chat = messages[index];
-              final isUser = chat['sender'] == 'user';
+                final chat = messages[index];
+                final isUser = chat['sender'] == 'user';
 
-              return _DesktopMessageBubble(
-                message: chat['message'] ?? '',
-                isUser: isUser,
-                fileName: chat['file_name'],
-              );
-            },
+                return _DesktopMessageBubble(
+                  message: chat['message'] ?? '',
+                  isUser: isUser,
+                  fileName: chat['file_name'],
+                );
+              },
+            ),
           ),
         ),
       );
@@ -640,13 +642,12 @@ class _DesktopMessageBubble extends StatelessWidget {
                 ],
               ),
               child: isUser
-                  ? SelectableText(
+                  ? Text(
                       processedMessage,
                       style: TextStyle(fontSize: 15, height: 1.5),
                     )
                   : MarkdownBody(
                       data: processedMessage,
-                      selectable: true,
                       shrinkWrap: true,
                       styleSheet: MarkdownStyleSheet(
                         // Paragraph
