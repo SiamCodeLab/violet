@@ -259,137 +259,28 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // API: SEND MESSAGE WITH STREAMING
+  // API: SEND MESSAGE
   // ============================================
-
   Future<void> sendMessage() async {
     final text = messageController.text.trim();
     final file = selectedFile.value;
 
+    // Allow send if text OR file exists
     if ((text.isEmpty && file == null) || isSending.value) return;
 
-    // If file attached → use old multipart method
-    if (file != null) {
-      await _sendWithFile(text, file);
-      return;
-    }
-
-    // Text only → use streaming
-    await _sendStreaming(text);
-  }
-
-  // ── STREAMING (text only) ──────────────────
-
-  Future<void> _sendStreaming(String text) async {
-    // Add user message immediately
-    currentMessages.add({
-      'id': DateTime.now().millisecondsSinceEpoch,
-      'sender': 'user',
-      'message': text,
-      'file_name': null,
-    });
-    messageController.clear();
-    scrollToBottom();
-
-    isSending.value = true;
-    isStreaming.value = true;
-    streamingText.value = '';
-
-    final StringBuffer fullText = StringBuffer();
-
-    try {
-      // Build the access token header same way your ApiService does
-      final token = StorageService.getAccessToken();
-      const streamChatbot = 'http://10.10.7.76:14090/';
-
-      final request = http.Request('POST', Uri.parse(streamChatbot));
-      request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
-      final Map<String, String> fields = {
-        'bot_id': botId.value.toString(),
-        'message': text,
-      };
-      if (sessionId.value != null) {
-        fields['session_id'] = sessionId.value.toString();
-      }
-      request.bodyFields = fields;
-
-      final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 100),
-        onTimeout: () => throw TimeoutException('Connection timed out'),
-      );
-
-      if (streamedResponse.statusCode == 200) {
-        await for (final line
-            in streamedResponse.stream
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
-          if (line.trim().isEmpty) continue;
-
-          try {
-            final json = jsonDecode(line);
-
-            if (json['type'] == 'chunk') {
-              fullText.write(json['text']);
-              streamingText.value = fullText.toString(); // live update UI
-              scrollToBottom();
-            } else if (json['type'] == 'done') {
-              // Stream complete — check if new session was created
-              if (json['session_id'] != null) {
-                final newId = json['session_id'] as int;
-                if (sessionId.value == null || sessionId.value != newId) {
-                  sessionId.value = newId;
-                  fetchSessionsForBot();
-                }
-              }
-              break;
-            }
-          } catch (_) {
-            continue; // skip malformed lines
-          }
-        }
-
-        // Move streamed text into messages list
-        if (fullText.isNotEmpty) {
-          currentMessages.add({
-            'id': DateTime.now().millisecondsSinceEpoch + 1,
-            'sender': 'violet',
-            'message': fullText.toString(),
-            'file_name': null,
-          });
-        }
-      } else {
-        SnackbarService.error('Failed to send message');
-      }
-    } on TimeoutException {
-      Console.error('Streaming timeout');
-      SnackbarService.error('Request timed out, please try again');
-    } catch (e) {
-      Console.error('Streaming error: $e');
-      SnackbarService.error('Unexpected error, please try again');
-    } finally {
-      streamingText.value = '';
-      isStreaming.value = false;
-      isSending.value = false;
-      scrollToBottom();
-    }
-  }
-
-  // ── MULTIPART (with file) ──────────────────
-
-  Future<void> _sendWithFile(String text, PickedFileInfo file) async {
+    // Optimistic UI - include file name if exists
     final userMessage = {
       'id': DateTime.now().millisecondsSinceEpoch,
       'sender': 'user',
       'message': text.isNotEmpty ? text : 'Sent a file',
-      'file_name': file.name,
+      'file_name': file?.name,
     };
     currentMessages.add(userMessage);
     messageController.clear();
     clearFile();
 
-    final fileToSend = file.file;
+    // Keep reference before clearing
+    final fileToSend = file?.file; // Get the actual File object
     scrollToBottom();
 
     try {
@@ -399,19 +290,22 @@ class ChatController extends GetxController {
         "bot_id": botId.value.toString(),
         "message": text,
       };
+
       if (sessionId.value != null) {
         fields["session_id"] = sessionId.value.toString();
       }
 
+      // Send with or without file
       final response = await ApiService.uploadMultipart(
         url: ApiEndpoint.chatbot,
         method: 'POST',
         fields: fields,
-        files: {'file': fileToSend},
+        files: fileToSend != null ? {'file': fileToSend} : null,
       );
 
       if (response.statusCode == 200) {
-        Console.success('Message sent with file');
+        Console.success('Message sent');
+
         final data = response.data;
 
         if (data['session_id'] != null) {
@@ -424,13 +318,14 @@ class ChatController extends GetxController {
 
         final aiResponse = data['ai_response'];
         if (aiResponse != null && aiResponse['success'] == true) {
-          currentMessages.add({
+          final aiMessage = {
             'id': DateTime.now().millisecondsSinceEpoch + 1,
             'sender': 'violet',
             'message': aiResponse['response'] ?? '',
-            'file_name': null,
-          });
+          };
+          currentMessages.add(aiMessage);
         }
+
         scrollToBottom();
       } else {
         Console.error('Error: ${response.data}');
@@ -443,6 +338,192 @@ class ChatController extends GetxController {
       isSending(false);
     }
   }
+
+  // ============================================
+  // API: SEND MESSAGE WITH STREAMING
+  // ============================================
+
+  // Future<void> sendMessage() async {
+  //   final text = messageController.text.trim();
+  //   final file = selectedFile.value;
+
+  //   if ((text.isEmpty && file == null) || isSending.value) return;
+
+  //   // If file attached → use old multipart method
+  //   if (file != null) {
+  //     await _sendWithFile(text, file);
+  //     return;
+  //   }
+
+  //   // Text only → use streaming
+  //   await _sendStreaming(text);
+  // }
+
+  // // ── STREAMING (text only) ──────────────────
+
+  // Future<void> _sendStreaming(String text) async {
+  //   // Add user message immediately
+  //   currentMessages.add({
+  //     'id': DateTime.now().millisecondsSinceEpoch,
+  //     'sender': 'user',
+  //     'message': text,
+  //     'file_name': null,
+  //   });
+  //   messageController.clear();
+  //   scrollToBottom();
+
+  //   isSending.value = true;
+  //   isStreaming.value = true;
+  //   streamingText.value = '';
+
+  //   final StringBuffer fullText = StringBuffer();
+
+  //   try {
+  //     // Build the access token header same way your ApiService does
+  //     final token = StorageService.getAccessToken();
+  //     const streamChatbot = 'http://10.10.7.76:14090/';
+
+  //     final request = http.Request('POST', Uri.parse(streamChatbot));
+  //     request.headers['Authorization'] = 'Bearer $token';
+  //     request.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
+  //     final Map<String, String> fields = {
+  //       'bot_id': botId.value.toString(),
+  //       'message': text,
+  //     };
+  //     if (sessionId.value != null) {
+  //       fields['session_id'] = sessionId.value.toString();
+  //     }
+  //     request.bodyFields = fields;
+
+  //     final streamedResponse = await request.send().timeout(
+  //       const Duration(seconds: 100),
+  //       onTimeout: () => throw TimeoutException('Connection timed out'),
+  //     );
+
+  //     if (streamedResponse.statusCode == 200) {
+  //       await for (final line
+  //           in streamedResponse.stream
+  //               .transform(utf8.decoder)
+  //               .transform(const LineSplitter())) {
+  //         if (line.trim().isEmpty) continue;
+
+  //         try {
+  //           final json = jsonDecode(line);
+
+  //           if (json['type'] == 'chunk') {
+  //             fullText.write(json['text']);
+  //             streamingText.value = fullText.toString(); // live update UI
+  //             scrollToBottom();
+  //           } else if (json['type'] == 'done') {
+  //             // Stream complete — check if new session was created
+  //             if (json['session_id'] != null) {
+  //               final newId = json['session_id'] as int;
+  //               if (sessionId.value == null || sessionId.value != newId) {
+  //                 sessionId.value = newId;
+  //                 fetchSessionsForBot();
+  //               }
+  //             }
+  //             break;
+  //           }
+  //         } catch (_) {
+  //           continue; // skip malformed lines
+  //         }
+  //       }
+
+  //       // Move streamed text into messages list
+  //       if (fullText.isNotEmpty) {
+  //         currentMessages.add({
+  //           'id': DateTime.now().millisecondsSinceEpoch + 1,
+  //           'sender': 'violet',
+  //           'message': fullText.toString(),
+  //           'file_name': null,
+  //         });
+  //       }
+  //     } else {
+  //       SnackbarService.error('Failed to send message');
+  //     }
+  //   } on TimeoutException {
+  //     Console.error('Streaming timeout');
+  //     SnackbarService.error('Request timed out, please try again');
+  //   } catch (e) {
+  //     Console.error('Streaming error: $e');
+  //     SnackbarService.error('Unexpected error, please try again');
+  //   } finally {
+  //     streamingText.value = '';
+  //     isStreaming.value = false;
+  //     isSending.value = false;
+  //     scrollToBottom();
+  //   }
+  // }
+
+  // // ── MULTIPART (with file) ──────────────────
+
+  // Future<void> _sendWithFile(String text, PickedFileInfo file) async {
+  //   final userMessage = {
+  //     'id': DateTime.now().millisecondsSinceEpoch,
+  //     'sender': 'user',
+  //     'message': text.isNotEmpty ? text : 'Sent a file',
+  //     'file_name': file.name,
+  //   };
+  //   currentMessages.add(userMessage);
+  //   messageController.clear();
+  //   clearFile();
+
+  //   final fileToSend = file.file;
+  //   scrollToBottom();
+
+  //   try {
+  //     isSending(true);
+
+  //     final Map<String, String> fields = {
+  //       "bot_id": botId.value.toString(),
+  //       "message": text,
+  //     };
+  //     if (sessionId.value != null) {
+  //       fields["session_id"] = sessionId.value.toString();
+  //     }
+
+  //     final response = await ApiService.uploadMultipart(
+  //       url: ApiEndpoint.chatbot,
+  //       method: 'POST',
+  //       fields: fields,
+  //       files: {'file': fileToSend},
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       Console.success('Message sent with file');
+  //       final data = response.data;
+
+  //       if (data['session_id'] != null) {
+  //         final newSessionId = data['session_id'];
+  //         if (sessionId.value == null || sessionId.value != newSessionId) {
+  //           sessionId.value = newSessionId;
+  //           fetchSessionsForBot();
+  //         }
+  //       }
+
+  //       final aiResponse = data['ai_response'];
+  //       if (aiResponse != null && aiResponse['success'] == true) {
+  //         currentMessages.add({
+  //           'id': DateTime.now().millisecondsSinceEpoch + 1,
+  //           'sender': 'violet',
+  //           'message': aiResponse['response'] ?? '',
+  //           'file_name': null,
+  //         });
+  //       }
+  //       scrollToBottom();
+  //     } else {
+  //       Console.error('Error: ${response.data}');
+  //       SnackbarService.error('Failed to send message');
+  //     }
+  //   } catch (e) {
+  //     Console.error('Exception: $e');
+  //     SnackbarService.error('Something went wrong');
+  //   } finally {
+  //     isSending(false);
+  //   }
+  // }
 
   // ============================================
   // RICH TEXT COPY (bold, bullets preserved)

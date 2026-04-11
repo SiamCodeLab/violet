@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/services/flutter_markdown_view.dart';
-import 'package:violet/core/services/markdown_web_view.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/os/windows/feature/chat/controller/chat_controller.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
