@@ -627,7 +627,7 @@ class _DesktopMessageBubble extends StatelessWidget {
                 ),
                 child: SelectableText(
                   processedMessage,
-                  style: const TextStyle(fontSize: 15, height: 1.5),
+                  style: const TextStyle(fontSize: 14, height: 1.5),
                 ),
               )
             else

@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:markdown/markdown.dart' as md;
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:violet/core/services/api_service.dart';
