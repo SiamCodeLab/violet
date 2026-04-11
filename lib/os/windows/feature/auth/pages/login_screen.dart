@@ -161,6 +161,7 @@ class LoginScreen extends StatelessWidget {
                   // Privacy policy
                   const SizedBox(height: 12),
                   RichText(
+                    textAlign: TextAlign.center,
                     text: TextSpan(
                       text:
                           'By clicking the "Login" button, you accept the terms of the ',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get_utils/src/get_utils/get_utils.dart';
 import 'package:get/route_manager.dart';
@@ -26,55 +28,59 @@ class LoginController extends GetxService {
   void toggleRememberMe() => rememberMe.toggle();
 
   //login
-  // Sign In
-  Future<void> signIn() async {
-    Console.info(loginEmailController.text);
-    if (!_validateSignInForm()) return;
 
-    try {
-      Console.api('Sign In');
-      isLoading.value = true;
-      final response = await ApiService.postAuth(
-        ApiEndpoint.login,
-        body: {
-          "email": loginEmailController.text.trim(),
-          "password": loginPasswordController.text.trim(),
-        },
+Future<void> signIn() async {
+  Console.info(loginEmailController.text);
+  if (!_validateSignInForm()) return;
+
+  try {
+    Console.api('Sign In');
+    isLoading.value = true;
+
+    final response = await ApiService.postAuth(
+      ApiEndpoint.login,
+      body: {
+        "email": loginEmailController.text.trim(),
+        "password": loginPasswordController.text.trim(),
+      },
+    ).timeout(
+      const Duration(seconds: 5),         // ← cancel after 5s
+      onTimeout: () {
+        throw TimeoutException('Request timed out');
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = response.data;
+      await StorageService.saveUserSession(
+        accessToken: data['access'],
+        refreshToken: data['refresh'],
       );
-
-      if (response.statusCode == 200) {
-        // User signed in successfully
-        final data = response.data;
-        // Save user data to SharedPreferences
-        await StorageService.saveUserSession(
-          accessToken: data['access'],
-          refreshToken: data['refresh'],
-        );
-        await StorageService.setUserEmail(loginEmailController.text.trim());
-        Console.info(data['access']);
-        Console.success('User signed in successfully');
-        SnackbarService.success('User signed in successfully');
-        loginEmailController.clear();
-        loginPasswordController.clear();
-        // Navigate to Home
-        Get.to(() => HomeScreen());
-        isLoading.value = false;
-      } else {
-        isLoading.value = false;
-        var error = response.data['detail'];
-        error == 'No active account found with the given credentials'
-            ? error = 'No account found '
-            : error;
-        SnackbarService.error(error);
-        Console.error('Error: ${response.data['detail']}');
-      }
-    } catch (e) {
-      isLoading.value = false;
-      Console.error('Sign In Error: $e');
-    } finally {
-      isLoading.value = false;
+      await StorageService.setUserEmail(loginEmailController.text.trim());
+      Console.info(data['access']);
+      Console.success('User signed in successfully');
+      SnackbarService.success('User signed in successfully');
+      loginEmailController.clear();
+      loginPasswordController.clear();
+      Get.to(() => HomeScreen());
+    } else {
+      var error = response.data['detail'];
+      error == 'No active account found with the given credentials'
+          ? error = 'No account found'
+          : error;
+      SnackbarService.error(error);
+      Console.error('Error: ${response.data['detail']}');
     }
+  } on TimeoutException {                  // ← catch timeout specifically
+    Console.error('Sign In Timeout: Request exceeded 5 seconds');
+    SnackbarService.error('Unexpected error, please try again');
+  } catch (e) {
+    Console.error('Sign In Error: $e');
+    SnackbarService.error('Unexpected error, please try again');
+  } finally {
+    isLoading.value = false;               // ← always runs, no need to repeat
   }
+}
 
   void logout() async {
     StorageService.clearUserSession();
