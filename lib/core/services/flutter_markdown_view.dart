@@ -12,7 +12,7 @@ class FlutterMarkdownView extends StatelessWidget {
       data: markdownText,
       selectable: false,
       styleSheet: MarkdownStyleSheet(
-        p: const TextStyle(fontSize: 14, height: 1.6, color: Color(0xFF1a1a1a)),
+        p: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF1a1a1a)),
         h1: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
