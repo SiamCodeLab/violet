@@ -46,6 +46,7 @@ class SInputField extends StatelessWidget {
     final RxBool isObscureText = (isSuffixIcon || obscureText).obs;
 
     final bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    final bool isIos = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -58,7 +59,7 @@ class SInputField extends StatelessWidget {
           children: [
             // Field label — width adapts to platform
             SizedBox(
-              width: isAndroid ? 80 : 150,
+              width: isAndroid || isIos ? 80 : 150,
               child: Text(
                 labelText,
                 style: TextStyle(
