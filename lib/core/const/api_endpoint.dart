@@ -1,6 +1,6 @@
 class ApiEndpoint {
-  // static const String baseUrl = 'https://violate.dsrt321.online';
-  static const String baseUrl = 'https://api.nextgen-careservices.co.uk';
+  static const String baseUrl = 'http://10.10.7.76:14040'; 
+  // static const String baseUrl = 'https://api.nextgen-careservices.co.uk';
 
 
   //Auth
@@ -20,5 +20,5 @@ class ApiEndpoint {
   static const String deleteAccount = '$baseUrl/api/auth/account-delete/';
 
   //privacy policy
-  static const String privacyPolicy = 'https://sites.google.com/view/violet-app/home';
+  static const String privacyPolicy = 'https://www.nextgen-careservices.com/privacy';
 }

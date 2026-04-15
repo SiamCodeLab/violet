@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -268,13 +269,11 @@ class ChatController extends GetxController {
 
     if ((text.isEmpty && file == null) || isSending.value) return;
 
-    // If file attached → use old multipart method
     if (file != null) {
-      await _sendWithFile(text, file);
+      await _sendWithFileStreaming(text, file);
       return;
     }
 
-    // Text only → use streaming
     await _sendStreaming(text);
   }
 
@@ -300,9 +299,8 @@ class ChatController extends GetxController {
     try {
       // Build the access token header same way your ApiService does
       final token = StorageService.getAccessToken();
-      const streamChatbot = 'http://10.10.7.76:14090/';
 
-      final request = http.Request('POST', Uri.parse(streamChatbot));
+      final request = http.Request('POST', Uri.parse(ApiEndpoint.chatbot));
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -378,69 +376,151 @@ class ChatController extends GetxController {
 
   // ── MULTIPART (with file) ──────────────────
 
-  Future<void> _sendWithFile(String text, PickedFileInfo file) async {
-    final userMessage = {
+  Future<void> _sendWithFileStreaming(String text, PickedFileInfo file) async {
+    // Add user message to UI immediately
+    currentMessages.add({
       'id': DateTime.now().millisecondsSinceEpoch,
       'sender': 'user',
       'message': text.isNotEmpty ? text : 'Sent a file',
       'file_name': file.name,
-    };
-    currentMessages.add(userMessage);
+    });
+
     messageController.clear();
     clearFile();
-
-    final fileToSend = file.file;
     scrollToBottom();
 
-    try {
-      isSending(true);
+    isSending.value = true;
+    isStreaming.value = true;
+    streamingText.value = '';
 
-      final Map<String, String> fields = {
-        "bot_id": botId.value.toString(),
-        "message": text,
-      };
-      if (sessionId.value != null) {
-        fields["session_id"] = sessionId.value.toString();
+    final StringBuffer fullText = StringBuffer();
+
+    try {
+      Console.info('[Upload] Starting upload process for ${file.name}');
+
+      if (botId.value == 0) {
+        throw Exception('Bot ID is not set.');
       }
 
-      final response = await ApiService.uploadMultipart(
-        url: ApiEndpoint.chatbot,
-        method: 'POST',
-        fields: fields,
-        files: {'file': fileToSend},
+      final token = StorageService.getAccessToken();
+      if (token.isEmpty) {
+        throw Exception('Access token is missing.');
+      }
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiEndpoint.chatbot),
       );
 
-      if (response.statusCode == 200) {
-        Console.success('Message sent with file');
-        final data = response.data;
+      request.headers['Authorization'] = 'Bearer $token';
 
-        if (data['session_id'] != null) {
-          final newSessionId = data['session_id'];
-          if (sessionId.value == null || sessionId.value != newSessionId) {
-            sessionId.value = newSessionId;
-            fetchSessionsForBot();
+      // Fields
+      request.fields['bot_id'] = botId.value.toString();
+
+      if (text.isNotEmpty) {
+        request.fields['message'] = text;
+      }
+
+      if (sessionId.value != null) {
+        request.fields['session_id'] = sessionId.value.toString();
+      }
+
+      Console.info('[Upload] Reading file bytes...');
+
+      // FIX: Read file to bytes manually to avoid MultipartFile.fromPath hanging on Windows
+      // Ensure you have 'import "dart:io";' at the top of your file
+      final filePath = file.file.path;
+      final fileOnDisk = File(filePath);
+
+      if (!await fileOnDisk.exists()) {
+        throw Exception('File does not exist at path: $filePath');
+      }
+
+      // Read file into memory
+      final fileBytes = await fileOnDisk.readAsBytes();
+      Console.info(
+        '[Upload] File read successfully (${fileBytes.length} bytes).',
+      );
+
+      // Add bytes to request
+      request.files.add(
+        http.MultipartFile.fromBytes('file', fileBytes, filename: file.name),
+      );
+
+      Console.info('[Upload] File attached to request.');
+
+      Console.info('[Upload] Sending HTTP Request...');
+
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 120),
+        onTimeout: () {
+          Console.error('[Upload] Request timed out');
+          throw TimeoutException('Connection timed out');
+        },
+      );
+
+      Console.info(
+        '[Upload] Response Status Code: ${streamedResponse.statusCode}',
+      );
+
+      if (streamedResponse.statusCode == 200) {
+        await for (final line
+            in streamedResponse.stream
+                .transform(utf8.decoder)
+                .transform(const LineSplitter())) {
+          if (line.trim().isEmpty) continue;
+
+          try {
+            final json = jsonDecode(line);
+
+            if (json['type'] == 'chunk') {
+              fullText.write(json['text']);
+              streamingText.value = fullText.toString();
+              scrollToBottom();
+            } else if (json['type'] == 'done') {
+              if (json['session_id'] != null) {
+                final newId = json['session_id'] as int;
+                if (sessionId.value == null || sessionId.value != newId) {
+                  sessionId.value = newId;
+                  fetchSessionsForBot();
+                }
+              }
+              break;
+            }
+          } catch (e) {
+            Console.error('[Upload] Skipping invalid stream line: $line');
+            continue;
           }
         }
 
-        final aiResponse = data['ai_response'];
-        if (aiResponse != null && aiResponse['success'] == true) {
+        if (fullText.isNotEmpty) {
           currentMessages.add({
             'id': DateTime.now().millisecondsSinceEpoch + 1,
             'sender': 'violet',
-            'message': aiResponse['response'] ?? '',
+            'message': fullText.toString(),
             'file_name': null,
           });
         }
-        scrollToBottom();
       } else {
-        Console.error('Error: ${response.data}');
-        SnackbarService.error('Failed to send message');
+        String errorBody = '';
+        try {
+          errorBody = await streamedResponse.stream.bytesToString();
+        } catch (_) {}
+        Console.error(
+          '[Upload] Server Error ${streamedResponse.statusCode}: $errorBody',
+        );
+        SnackbarService.error('Server error: ${streamedResponse.statusCode}');
       }
+    } on TimeoutException {
+      SnackbarService.error('Request timed out');
     } catch (e) {
-      Console.error('Exception: $e');
-      SnackbarService.error('Something went wrong');
+      Console.error('[Upload] Critical Error: $e');
+      SnackbarService.error('Failed to send file: ${e.toString()}');
     } finally {
-      isSending(false);
+      streamingText.value = '';
+      isStreaming.value = false;
+      isSending.value = false;
+      scrollToBottom();
     }
   }
 

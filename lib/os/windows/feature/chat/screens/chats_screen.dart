@@ -131,7 +131,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ============================================
-// CHAT MESSAGES WIDGET
+// CHAT MESSAGES WIDGET (UPDATED FOR STREAMING)
 // ============================================
 
 class _ChatMessages extends StatelessWidget {
@@ -142,9 +142,12 @@ class _ChatMessages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Wrapped in Obx to listen to streamingText updates in real-time
     return Obx(() {
       final messages = controller.currentMessages;
       final isSending = controller.isSending.value;
+      final isStreaming = controller.isStreaming.value;
+      final streamingText = controller.streamingText.value;
 
       return SelectionArea(
         child: ListView.builder(
@@ -152,11 +155,21 @@ class _ChatMessages extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           itemCount: messages.length + (isSending ? 1 : 0),
           itemBuilder: (_, index) {
-            // Thinking bubble
+            // Handle the streaming / thinking bubble
             if (index == messages.length && isSending) {
+              // If streaming has started and we have text, show the streaming bubble
+              if (isStreaming && streamingText.isNotEmpty) {
+                return _MessageBubble(
+                  message: streamingText,
+                  isUser: false,
+                  isStreaming: true,
+                );
+              }
+              // Otherwise, show the thinking/loading bubble
               return _ThinkingBubble(loadingIcon: loadingIcon);
             }
 
+            // Handle standard messages
             final chat = messages[index];
             final isUser = chat['sender'] == 'user';
 
@@ -164,6 +177,7 @@ class _ChatMessages extends StatelessWidget {
               message: chat['message'] ?? '',
               isUser: isUser,
               fileName: chat['file_name'],
+              isStreaming: false, // Loaded messages are static
             );
           },
         ),
@@ -180,11 +194,13 @@ class _MessageBubble extends StatelessWidget {
   final String message;
   final bool isUser;
   final String? fileName;
+  final bool isStreaming; // Added streaming flag
 
   const _MessageBubble({
     required this.message,
     required this.isUser,
     this.fileName,
+    this.isStreaming = false,
   });
 
   /// Process the message to handle escaped characters from API
@@ -283,7 +299,8 @@ class _MessageBubble extends StatelessWidget {
               ],
             ),
             child: isUser
-                ? Text(
+                ? SelectableText(
+                    // Using SelectableText for user messages like desktop
                     processedMessage,
                     style: TextStyle(color: Colors.black, fontSize: 15),
                   )
@@ -415,8 +432,8 @@ class _MessageBubble extends StatelessWidget {
                   ),
           ),
 
-          // Copy button for Violet
-          if (!isUser)
+          // Copy button for Violet (Hidden while streaming)
+          if (!isUser && !isStreaming)
             GestureDetector(
               onTap: () {
                 // Remove markdown symbols for clean copy
