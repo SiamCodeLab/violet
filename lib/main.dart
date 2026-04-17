@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
+import 'package:violet/core/services/storage/websocket_service.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
@@ -50,6 +52,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: initialRoute,
+      initialBinding: BindingsBuilder(() {
+        Get.put(WebSocketService(), permanent: true);
+      }),
     );
   }
 }
