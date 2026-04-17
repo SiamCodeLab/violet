@@ -94,14 +94,32 @@ class ChatController extends GetxController {
 
   void _setupWebSocketListeners() {
     _wsService.onMessage = _handleWSMessage;
+
+    // Handle Stream Close (Server hung up or finished)
     _wsService.onDone = _handleWSDisconnect;
+
+    // Handle Errors (Network issue, etc.)
     _wsService.onError = (error) {
-      // Only show error if we are actively sending/loading
+      Console.error(' WS Stream Error: $error');
+
+      // Only alert the user if we were actually waiting for a message
       if (isSending.value) {
-        SnackbarService.error('Connection lost');
+        SnackbarService.error('Connection error');
+
+        // IMPORTANT: Stop loading so user can try again
         _finalizeStreamingMessage();
       }
     };
+  }
+
+  void _handleWSDisconnect() {
+    Console.error(' WS Stream Closed');
+
+    // If we were expecting a message and the socket closed without "done",
+    // assume the message is finished (or failed) and stop the loader.
+    if (isSending.value) {
+      _finalizeStreamingMessage();
+    }
   }
 
   void _clearListeners() {
@@ -110,25 +128,27 @@ class ChatController extends GetxController {
     _wsService.onError = null;
   }
 
-  void _handleWSDisconnect() {
-    // If stream closes while we are expecting a response, finalize it
-    if (isSending.value) {
-      _finalizeStreamingMessage();
-    }
-  }
+  // ============================================
+  // ROBUST STREAM HANDLING (No Timer)
+  // ============================================
 
   // ============================================
   // ROBUST STREAM HANDLING (No Timer)
   // ============================================
 
-  void _handleWSMessage(String message) {
-    Console.debug('WS Raw: $message');
+  // ============================================
+  // ROBUST STREAM HANDLING (Handles Error Types)
+  // ============================================
 
+  void _handleWSMessage(String message) {
+    // SAFETY WRAPPER
     try {
-      // 1. Try to parse as JSON
+      Console.debug('WS Raw: $message');
+
+      // 1. TRY TO PARSE JSON
       final dynamic json = jsonDecode(message);
 
-      // 2. CHECK FOR "DONE" SIGNAL FIRST
+      // 2. CHECK FOR "DONE" SIGNAL
       if (json is Map &&
           (json['type'] == 'done' ||
               json['status'] == 'done' ||
@@ -138,31 +158,39 @@ class ChatController extends GetxController {
         return;
       }
 
-      // 3. HANDLE TEXT CHUNKS
+      // 3. CHECK FOR "ERROR" SIGNAL (THE FIX)
+      if (json is Map && json['type'] == 'error') {
+        final errorMessage =
+            json['message'] ?? json['error'] ?? 'An unknown error occurred';
+        Console.error('Backend Error: $errorMessage');
+
+        // Show error to user
+        SnackbarService.error(errorMessage);
+
+        // Stop loading because the bot won't reply
+        _finalizeStreamingMessage();
+        return;
+      }
+
+      // 4. HANDLE TEXT CHUNKS
       String? textChunk;
 
       if (json is Map) {
         textChunk =
             json['text'] ?? json['content'] ?? json['chunk'] ?? json['message'];
+      } else if (json is String) {
+        textChunk = json;
       }
 
-      // If we found text, append it
+      // 5. APPEND TEXT IF FOUND
       if (textChunk != null && textChunk.isNotEmpty) {
         streamingText.value = streamingText.value + textChunk;
         scrollToBottom();
-      } else {
-        // Fallback: If JSON parsing works but no known keys, check if it's a raw string inside
-        if (json is String && json.isNotEmpty) {
-          streamingText.value = streamingText.value + json;
-          scrollToBottom();
-        }
       }
-    } catch (e) {
-      // 4. HANDLE RAW TEXT (Fallback)
-      if (message.toString().isNotEmpty) {
-        streamingText.value = streamingText.value + message.toString();
-        scrollToBottom();
-      }
+    } catch (e, stacktrace) {
+      Console.error('Failed to parse WS message: $message');
+      Console.debug('Stacktrace: $stacktrace');
+      // Do nothing, keep connection alive
     }
   }
 
@@ -264,18 +292,26 @@ class ChatController extends GetxController {
   }
 
   void _finalizeStreamingMessage() {
-    if (streamingText.value.isNotEmpty) {
-      currentMessages.add({
-        'id': DateTime.now().millisecondsSinceEpoch + 1,
-        'sender': 'violet',
-        'message': streamingText.value,
-        'file_name': null,
-      });
+    // Only run if we are in a sending state to avoid double-processing
+    if (isSending.value || isStreaming.value) {
+      // If we have accumulated text, save it to the chat history
+      if (streamingText.value.isNotEmpty) {
+        currentMessages.add({
+          'id': DateTime.now().millisecondsSinceEpoch + 1,
+          'sender': 'violet',
+          'message': streamingText.value,
+          'file_name': null,
+        });
+      }
+
+      // Reset UI State
+      streamingText.value = '';
+      isStreaming.value = false;
+      isSending.value = false;
+      scrollToBottom();
+
+      Console.info('🏁 Message Finalized');
     }
-    streamingText.value = '';
-    isStreaming.value = false;
-    isSending.value = false;
-    scrollToBottom();
   }
 
   // ============================================
