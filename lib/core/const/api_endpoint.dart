@@ -1,7 +1,7 @@
 class ApiEndpoint {
-  static const String baseUrl = 'https://violate.dsrt321.online';
-  // static const String baseUrl = 'https://api.nextgen-careservices.co.uk';
-  static const String wsBaseUrl = 'wss://violate.dsrt321.online';
+  // static const String baseUrl = 'https://violate.dsrt321.online';
+  static const String baseUrl = 'https://api.nextgen-careservices.co.uk';
+  static const String wsBaseUrl = 'wss://api.nextgen-careservices.co.uk';
 
   //Auth
   static const String login = '$baseUrl/api/auth/login/';
@@ -23,7 +23,7 @@ class ApiEndpoint {
 
   //privacy policy
   static const String privacyPolicy =
-      'https://sites.google.com/view/violet-app/home';
+      'https://nextgen-careservices.com/privacy';
 
   // REST endpoint — file upload before sending a message
   static const String chatFileUpload =
