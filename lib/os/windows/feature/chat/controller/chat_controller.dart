@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:markdown/markdown.dart' as md;
+import 'package:super_clipboard/super_clipboard.dart';
 import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
@@ -36,9 +39,10 @@ class ChatController extends GetxController {
   RxBool isMessagesLoading = false.obs;
   RxBool isSending = false.obs;
   RxBool isDeleting = false.obs;
+  RxBool isStreaming = false.obs;
+  RxString streamingText = ''.obs;
   Rx<PickedFileInfo?> selectedFile = Rx<PickedFileInfo?>(null);
 
-  // Track if initial load is done
   bool _isInitialized = false;
 
   // ============================================
@@ -72,60 +76,40 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  //  FIXED: Set Bot ID - Use WidgetsBinding to avoid build error
+  // SET BOT ID
   // ============================================
 
   void setBotId(int id) {
-    // If same bot, do nothing
     if (_isInitialized && botId.value == id) {
       Console.info('Same bot, skipping reload');
       return;
     }
-
     botId.value = id;
     Console.info('Bot ID set: $id');
-
-    //  Clear data immediately (sync)
     _clearDataSync();
-
-    //  Fetch data AFTER build completes using addPostFrameCallback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchSessionsForBot();
       _isInitialized = true;
     });
   }
 
-  //  Sync clear - no setState, just clear values
   void _clearDataSync() {
     currentMessages.clear();
     sessionId.value = null;
     messageController.clear();
     currentBotSessions.clear();
+    streamingText.value = '';
   }
 
-  // ============================================
-  //  ALTERNATIVE: Initialize from Screen
-  // ============================================
-  // Call this from initState or onInit of the screen
-
   void initializeForBot(int id) {
-    if (_isInitialized && botId.value == id) {
-      return;
-    }
-
+    if (_isInitialized && botId.value == id) return;
     botId.value = id;
     _clearDataSync();
-
-    // Delay fetch to avoid build conflicts
     Future.microtask(() {
       fetchSessionsForBot();
       _isInitialized = true;
     });
   }
-
-  // ============================================
-  //  Reset when going back to home
-  // ============================================
 
   void resetController() {
     _isInitialized = false;
@@ -139,31 +123,23 @@ class ChatController extends GetxController {
   // ============================================
 
   Future<void> fetchSessionsForBot() async {
-    //  Safety check - don't fetch if bot not set
     if (botId.value == 0) {
       Console.info('Bot ID not set, skipping fetch');
       return;
     }
-
     try {
       isSessionLoading(true);
-
       final response = await ApiService.getAuth(
         "${ApiEndpoint.chatSession}?bot_id=${botId.value}",
       );
-
       if (response.statusCode == 200) {
         Console.success('Sessions fetched for bot: ${botId.value}');
-
         final List<dynamic> data = response.data;
-
         final filteredSessions = data
             .where((session) => session['bot_id'] == botId.value)
             .map((item) => Map<String, dynamic>.from(item))
             .toList();
-
         currentBotSessions.value = filteredSessions;
-
         Console.info('Found ${currentBotSessions.length} sessions');
       } else {
         Console.error('Error: ${response.data}');
@@ -187,7 +163,6 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Clear selected file
   void clearFile() {
     selectedFile.value = null;
     Console.info('File cleared');
@@ -207,17 +182,14 @@ class ChatController extends GetxController {
     try {
       if (_scrollController == null) return;
       if (!_scrollController!.hasClients) return;
-
       if (_scrollController!.positions.length != 1) {
         _scrollUsingPosition();
         return;
       }
-
       if (!_scrollController!.position.hasContentDimensions) {
         Future.delayed(const Duration(milliseconds: 100), () => _tryScroll());
         return;
       }
-
       final maxExtent = _scrollController!.position.maxScrollExtent;
       if (maxExtent > 0) {
         _scrollController!.animateTo(
@@ -236,7 +208,6 @@ class ChatController extends GetxController {
     try {
       if (_scrollController == null) return;
       if (_scrollController!.positions.isEmpty) return;
-
       final position = _scrollController!.positions.last;
       if (position.hasContentDimensions) {
         position.animateTo(
@@ -257,16 +228,12 @@ class ChatController extends GetxController {
   Future<void> loadSessionMessages(int id) async {
     try {
       isMessagesLoading(true);
-
       final response = await ApiService.getAuth(
         "${ApiEndpoint.chatSession}$id",
       );
-
       if (response.statusCode == 200) {
         Console.success('Messages loaded: $id');
-
         final List messages = response.data['messages'] ?? [];
-
         currentMessages.value = messages.map<Map<String, dynamic>>((msg) {
           return {
             'id': msg['id'],
@@ -276,7 +243,6 @@ class ChatController extends GetxController {
             'created_at': msg['created_at'],
           };
         }).toList();
-
         sessionId.value = id;
         scrollToBottom();
       } else {
@@ -372,6 +338,224 @@ class ChatController extends GetxController {
   }
 
   // ============================================
+  // API: SEND MESSAGE WITH STREAMING
+  // ============================================
+
+  // Future<void> sendMessage() async {
+  //   final text = messageController.text.trim();
+  //   final file = selectedFile.value;
+
+  //   if ((text.isEmpty && file == null) || isSending.value) return;
+
+  //   // If file attached → use old multipart method
+  //   if (file != null) {
+  //     await _sendWithFile(text, file);
+  //     return;
+  //   }
+
+  //   // Text only → use streaming
+  //   await _sendStreaming(text);
+  // }
+
+  // // ── STREAMING (text only) ──────────────────
+
+  // Future<void> _sendStreaming(String text) async {
+  //   // Add user message immediately
+  //   currentMessages.add({
+  //     'id': DateTime.now().millisecondsSinceEpoch,
+  //     'sender': 'user',
+  //     'message': text,
+  //     'file_name': null,
+  //   });
+  //   messageController.clear();
+  //   scrollToBottom();
+
+  //   isSending.value = true;
+  //   isStreaming.value = true;
+  //   streamingText.value = '';
+
+  //   final StringBuffer fullText = StringBuffer();
+
+  //   try {
+  //     // Build the access token header same way your ApiService does
+  //     final token = StorageService.getAccessToken();
+  //     const streamChatbot = 'http://10.10.7.76:14090/';
+
+  //     final request = http.Request('POST', Uri.parse(streamChatbot));
+  //     request.headers['Authorization'] = 'Bearer $token';
+  //     request.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
+  //     final Map<String, String> fields = {
+  //       'bot_id': botId.value.toString(),
+  //       'message': text,
+  //     };
+  //     if (sessionId.value != null) {
+  //       fields['session_id'] = sessionId.value.toString();
+  //     }
+  //     request.bodyFields = fields;
+
+  //     final streamedResponse = await request.send().timeout(
+  //       const Duration(seconds: 100),
+  //       onTimeout: () => throw TimeoutException('Connection timed out'),
+  //     );
+
+  //     if (streamedResponse.statusCode == 200) {
+  //       await for (final line
+  //           in streamedResponse.stream
+  //               .transform(utf8.decoder)
+  //               .transform(const LineSplitter())) {
+  //         if (line.trim().isEmpty) continue;
+
+  //         try {
+  //           final json = jsonDecode(line);
+
+  //           if (json['type'] == 'chunk') {
+  //             fullText.write(json['text']);
+  //             streamingText.value = fullText.toString(); // live update UI
+  //             scrollToBottom();
+  //           } else if (json['type'] == 'done') {
+  //             // Stream complete — check if new session was created
+  //             if (json['session_id'] != null) {
+  //               final newId = json['session_id'] as int;
+  //               if (sessionId.value == null || sessionId.value != newId) {
+  //                 sessionId.value = newId;
+  //                 fetchSessionsForBot();
+  //               }
+  //             }
+  //             break;
+  //           }
+  //         } catch (_) {
+  //           continue; // skip malformed lines
+  //         }
+  //       }
+
+  //       // Move streamed text into messages list
+  //       if (fullText.isNotEmpty) {
+  //         currentMessages.add({
+  //           'id': DateTime.now().millisecondsSinceEpoch + 1,
+  //           'sender': 'violet',
+  //           'message': fullText.toString(),
+  //           'file_name': null,
+  //         });
+  //       }
+  //     } else {
+  //       SnackbarService.error('Failed to send message');
+  //     }
+  //   } on TimeoutException {
+  //     Console.error('Streaming timeout');
+  //     SnackbarService.error('Request timed out, please try again');
+  //   } catch (e) {
+  //     Console.error('Streaming error: $e');
+  //     SnackbarService.error('Unexpected error, please try again');
+  //   } finally {
+  //     streamingText.value = '';
+  //     isStreaming.value = false;
+  //     isSending.value = false;
+  //     scrollToBottom();
+  //   }
+  // }
+
+  // // ── MULTIPART (with file) ──────────────────
+
+  // Future<void> _sendWithFile(String text, PickedFileInfo file) async {
+  //   final userMessage = {
+  //     'id': DateTime.now().millisecondsSinceEpoch,
+  //     'sender': 'user',
+  //     'message': text.isNotEmpty ? text : 'Sent a file',
+  //     'file_name': file.name,
+  //   };
+  //   currentMessages.add(userMessage);
+  //   messageController.clear();
+  //   clearFile();
+
+  //   final fileToSend = file.file;
+  //   scrollToBottom();
+
+  //   try {
+  //     isSending(true);
+
+  //     final Map<String, String> fields = {
+  //       "bot_id": botId.value.toString(),
+  //       "message": text,
+  //     };
+  //     if (sessionId.value != null) {
+  //       fields["session_id"] = sessionId.value.toString();
+  //     }
+
+  //     final response = await ApiService.uploadMultipart(
+  //       url: ApiEndpoint.chatbot,
+  //       method: 'POST',
+  //       fields: fields,
+  //       files: {'file': fileToSend},
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       Console.success('Message sent with file');
+  //       final data = response.data;
+
+  //       if (data['session_id'] != null) {
+  //         final newSessionId = data['session_id'];
+  //         if (sessionId.value == null || sessionId.value != newSessionId) {
+  //           sessionId.value = newSessionId;
+  //           fetchSessionsForBot();
+  //         }
+  //       }
+
+  //       final aiResponse = data['ai_response'];
+  //       if (aiResponse != null && aiResponse['success'] == true) {
+  //         currentMessages.add({
+  //           'id': DateTime.now().millisecondsSinceEpoch + 1,
+  //           'sender': 'violet',
+  //           'message': aiResponse['response'] ?? '',
+  //           'file_name': null,
+  //         });
+  //       }
+  //       scrollToBottom();
+  //     } else {
+  //       Console.error('Error: ${response.data}');
+  //       SnackbarService.error('Failed to send message');
+  //     }
+  //   } catch (e) {
+  //     Console.error('Exception: $e');
+  //     SnackbarService.error('Something went wrong');
+  //   } finally {
+  //     isSending(false);
+  //   }
+  // }
+
+  // ============================================
+  // RICH TEXT COPY (bold, bullets preserved)
+  // ============================================
+
+  Future<void> copyAsRichText(String markdownText, BuildContext context) async {
+    try {
+      // Convert markdown → HTML so Word/Docs gets formatting
+      final html = md.markdownToHtml(
+        markdownText,
+        extensionSet: md.ExtensionSet.gitHubWeb,
+      );
+
+      final clipboard = SystemClipboard.instance;
+      if (clipboard != null) {
+        final item = DataWriterItem();
+        item.add(Formats.htmlText(html)); // rich text for Word/Docs
+        item.add(Formats.plainText(markdownText)); // plain fallback
+        await clipboard.write([item]);
+      } else {
+        // Fallback if super_clipboard not available
+        await Clipboard.setData(ClipboardData(text: markdownText));
+      }
+
+      SnackbarService.success('Copied to clipboard');
+    } catch (e) {
+      Console.error('Copy error: $e');
+      // Last resort fallback
+      await Clipboard.setData(ClipboardData(text: markdownText));
+      SnackbarService.success('Copied to clipboard');
+    }
+  }
+
+  // ============================================
   // API: DELETE SESSION
   // ============================================
 
@@ -379,7 +563,6 @@ class ChatController extends GetxController {
     try {
       final session = currentBotSessions[index];
       final id = session['id'];
-
       Console.info('Deleting session: $id');
       isDeleting(true);
 
@@ -390,10 +573,7 @@ class ChatController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 204) {
         Console.success('Session deleted: $id');
         currentBotSessions.removeAt(index);
-
-        if (sessionId.value == id) {
-          startNewChat();
-        }
+        if (sessionId.value == id) startNewChat();
         Get.back();
         SnackbarService.success('Chat deleted');
       } else {
@@ -409,20 +589,18 @@ class ChatController extends GetxController {
   }
 
   // ============================================
-  // DELETE CONFIRMATION DIALOGS
+  // DELETE CONFIRMATION
   // ============================================
 
   void confirmDeleteSession(int index, BuildContext context) {
     final session = currentBotSessions[index];
     final title = session['title'] ?? 'Untitled';
-
     DeleteConfirmationDialog.showSmart(
       context: context,
       title: 'Delete Chat',
       itemName: title,
       onConfirm: () => deleteSession(index),
     );
-
     Console.info('Confirm delete session: $title');
   }
 
@@ -434,13 +612,12 @@ class ChatController extends GetxController {
     currentMessages.clear();
     sessionId.value = null;
     messageController.clear();
+    streamingText.value = '';
     clearFile();
     Console.info('New chat started');
   }
 
-  void requestFocus() {
-    messageFocusNode.requestFocus();
-  }
+  void requestFocus() => messageFocusNode.requestFocus();
 
   void signOut() {
     Get.put(LoginController()).logout();
