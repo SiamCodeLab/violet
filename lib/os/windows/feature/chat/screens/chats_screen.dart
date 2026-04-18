@@ -4,13 +4,13 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
+import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 import 'package:violet/os/windows/feature/profile/pages/profile_page.dart';
 
 import '../controller/chat_controller.dart';
 
-// Changed to StatefulWidget to properly handle controller lifecycle
 class ChatsScreen extends StatefulWidget {
   final dynamic initialQuery;
   final String loadingIcon;
@@ -34,13 +34,16 @@ class _ChatsScreenState extends State<ChatsScreen> {
   void initState() {
     super.initState();
 
-    //  FIX: Delete existing controller and create new one for each bot
+    // SAFE INITIALIZATION
     if (Get.isRegistered<ChatController>()) {
-      Get.delete<ChatController>();
+      controller = Get.find<ChatController>();
+      Console.info('Found existing ChatController');
+    } else {
+      controller = Get.put(ChatController());
+      Console.info('Created new ChatController');
     }
-    controller = Get.put(ChatController());
 
-    //  FIX: Initialize bot AFTER build using addPostFrameCallback
+    // INITIALIZE BOT ID
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setBotId(widget.botid);
     });
@@ -92,7 +95,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
                     );
                   }
 
-                  return controller.currentMessages.isEmpty
+                  return controller.currentMessages.isEmpty &&
+                          !controller.isSending.value
                       ? _EmptyState(image: widget.initialQuery)
                       : _ChatMessages(
                           controller: controller,
@@ -131,7 +135,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ============================================
-// CHAT MESSAGES WIDGET
+// ⭐ UPDATED CHAT MESSAGES WIDGET
 // ============================================
 
 class _ChatMessages extends StatelessWidget {
@@ -145,18 +149,32 @@ class _ChatMessages extends StatelessWidget {
     return Obx(() {
       final messages = controller.currentMessages;
       final isSending = controller.isSending.value;
+      final streamingText = controller.streamingText.value;
+      final isStreaming = controller.isStreaming.value;
 
       return SelectionArea(
         child: ListView.builder(
           controller: controller.scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          // Add 1 extra item if we are currently sending/receiving
           itemCount: messages.length + (isSending ? 1 : 0),
           itemBuilder: (_, index) {
-            // Thinking bubble
+            // Handle the last item (Live Streaming or Loading Bubble)
             if (index == messages.length && isSending) {
+              if (isStreaming && streamingText.isNotEmpty) {
+                // Show the live updating text
+                return _MessageBubble(
+                  message: streamingText,
+                  isUser: false,
+                  fileName: null,
+                  isStreaming: true, // Mark as streaming to hide copy button
+                );
+              }
+              // Show the "Thinking..." animation
               return _ThinkingBubble(loadingIcon: loadingIcon);
             }
 
+            // Handle standard saved messages
             final chat = messages[index];
             final isUser = chat['sender'] == 'user';
 
@@ -164,6 +182,7 @@ class _ChatMessages extends StatelessWidget {
               message: chat['message'] ?? '',
               isUser: isUser,
               fileName: chat['file_name'],
+              isStreaming: false,
             );
           },
         ),
@@ -180,26 +199,20 @@ class _MessageBubble extends StatelessWidget {
   final String message;
   final bool isUser;
   final String? fileName;
+  final bool isStreaming; // NEW: Added to handle live UI differences
 
   const _MessageBubble({
     required this.message,
     required this.isUser,
     this.fileName,
+    this.isStreaming = false,
   });
 
-  /// Process the message to handle escaped characters from API
   String _processMarkdown(String text) {
     String processed = text;
-
-    // Replace literal \n with actual newlines
     processed = processed.replaceAll('\\n', '\n');
-
-    // Replace literal \t with actual tabs
     processed = processed.replaceAll('\\t', '\t');
-
-    // Handle escaped quotes
     processed = processed.replaceAll('\\"', '"');
-
     return processed.trim();
   }
 
@@ -227,7 +240,7 @@ class _MessageBubble extends StatelessWidget {
             ),
           ),
 
-          // File attachment display (if file exists)
+          // File attachment
           if (fileName != null && fileName!.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(bottom: 6),
@@ -263,7 +276,7 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
 
-          // Message bubble
+          // Message Bubble
           Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
@@ -290,15 +303,13 @@ class _MessageBubble extends StatelessWidget {
                 : MarkdownBody(
                     data: processedMessage,
                     shrinkWrap: true,
+                    // Optional: Add a blinking cursor or highlight if streaming
                     styleSheet: MarkdownStyleSheet(
-                      // Paragraph
                       p: const TextStyle(
                         fontSize: 15,
                         height: 1.6,
                         color: Colors.black87,
                       ),
-
-                      // Headers
                       h1: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -335,8 +346,6 @@ class _MessageBubble extends StatelessWidget {
                         color: Colors.black54,
                         height: 1.4,
                       ),
-
-                      // Bold & Italic
                       strong: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -345,15 +354,11 @@ class _MessageBubble extends StatelessWidget {
                         fontStyle: FontStyle.italic,
                         color: Colors.black87,
                       ),
-
-                      // Lists
                       listBullet: TextStyle(
                         fontSize: 15,
                         color: Color(ThemeColor.primary),
                       ),
                       listIndent: 20.0,
-
-                      // Blockquote
                       blockquote: TextStyle(
                         fontSize: 14,
                         fontStyle: FontStyle.italic,
@@ -373,8 +378,6 @@ class _MessageBubble extends StatelessWidget {
                         top: 6,
                         bottom: 6,
                       ),
-
-                      // Code
                       code: TextStyle(
                         fontSize: 12,
                         fontFamily: 'monospace',
@@ -386,15 +389,11 @@ class _MessageBubble extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       codeblockPadding: const EdgeInsets.all(10),
-
-                      // Horizontal rule
                       horizontalRuleDecoration: BoxDecoration(
                         border: Border(
                           top: BorderSide(color: Colors.grey[300]!, width: 1),
                         ),
                       ),
-
-                      // Table
                       tableHead: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
@@ -405,8 +404,6 @@ class _MessageBubble extends StatelessWidget {
                         width: 1,
                       ),
                       tableCellsPadding: const EdgeInsets.all(6),
-
-                      // Links
                       a: TextStyle(
                         color: Color(ThemeColor.primary),
                         decoration: TextDecoration.underline,
@@ -415,11 +412,10 @@ class _MessageBubble extends StatelessWidget {
                   ),
           ),
 
-          // Copy button for Violet
-          if (!isUser)
+          // Copy button - HIDDEN while streaming
+          if (!isUser && !isStreaming)
             GestureDetector(
               onTap: () {
-                // Remove markdown symbols for clean copy
                 final cleanMessage = processedMessage
                     .replaceAll(RegExp(r'\*\*'), '')
                     .replaceAll(RegExp(r'\*'), '');
@@ -441,7 +437,6 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
-  // Get icon based on file extension
   IconData _getFileIcon(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
     switch (ext) {
@@ -507,7 +502,7 @@ class _BottomSection extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // ⭐ File Attachment Preview
+          // File Attachment Preview
           _FileAttachmentPreview(controller: controller),
 
           // Input Field
@@ -526,7 +521,7 @@ class _BottomSection extends StatelessWidget {
 }
 
 // ============================================
-// ⭐ FILE ATTACHMENT PREVIEW WIDGET
+// FILE ATTACHMENT PREVIEW WIDGET
 // ============================================
 
 class _FileAttachmentPreview extends StatelessWidget {
@@ -538,8 +533,6 @@ class _FileAttachmentPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final file = controller.selectedFile.value;
-
-      // Don't show if no file selected
       if (file == null) return const SizedBox.shrink();
 
       return Container(
@@ -559,7 +552,6 @@ class _FileAttachmentPreview extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // File Icon
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -572,10 +564,7 @@ class _FileAttachmentPreview extends StatelessWidget {
                 size: 20,
               ),
             ),
-
             const SizedBox(width: 10),
-
-            // File Name & Size
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,8 +587,6 @@ class _FileAttachmentPreview extends StatelessWidget {
                 ],
               ),
             ),
-
-            // ⭐ Remove Button (Cross)
             GestureDetector(
               onTap: () => controller.clearFile(),
               child: Container(
@@ -664,7 +651,6 @@ class _FloatingInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          //  File Pick Button
           IconButton(
             icon: Icon(Icons.add, color: Color(ThemeColor.primary), size: 24),
             onPressed: () => controller.pickFile(),
@@ -724,7 +710,6 @@ class _NavigationDrawer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).viewPadding.top + 10,
@@ -740,12 +725,12 @@ class _NavigationDrawer extends StatelessWidget {
                         icon: Icon(Icons.menu, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
-
-                      // Icon(Icons.email, color: AppColors.textWhite, size: 14),
                       SizedBox(width: 3),
-                      Text(
-                        controller.email.value,
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      Obx(
+                        () => Text(
+                          controller.email.value,
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
                       ),
                     ],
                   ),
@@ -754,7 +739,6 @@ class _NavigationDrawer extends StatelessWidget {
                     icon: PathStrings.homeIcon,
                     label: 'Home',
                     onTap: () {
-                      //  Clean up before going home
                       controller.resetController();
                       Navigator.pushReplacement(
                         context,
@@ -779,8 +763,6 @@ class _NavigationDrawer extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  //  Chat History Title with count
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -800,8 +782,6 @@ class _NavigationDrawer extends StatelessWidget {
                 ],
               ),
             ),
-
-            // ⭐ Chat History List - Uses currentBotSessions
             Expanded(
               child: Obx(() {
                 if (controller.isSessionLoading.value) {
@@ -809,8 +789,6 @@ class _NavigationDrawer extends StatelessWidget {
                     child: CircularProgressIndicator(color: Colors.white),
                   );
                 }
-
-                //  Use currentBotSessions instead of allSessions
                 if (controller.currentBotSessions.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16),
@@ -820,16 +798,13 @@ class _NavigationDrawer extends StatelessWidget {
                     ),
                   );
                 }
-
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: controller.currentBotSessions.length,
                   itemBuilder: (_, index) {
-                    //  Use currentBotSessions
                     final session = controller.currentBotSessions[index];
                     final isActive =
                         controller.sessionId.value == session['id'];
-
                     return _ChatHistoryItem(
                       title: session['title'] ?? 'Untitled',
                       isActive: isActive,
@@ -845,46 +820,6 @@ class _NavigationDrawer extends StatelessWidget {
                 );
               }),
             ),
-
-            // Logout Button
-            // Padding(
-            //   padding: const EdgeInsets.all(20),
-            //   child: SizedBox(
-            //     width: double.infinity,
-            //     height: 48,
-            //     child: ElevatedButton(
-            //       onPressed: () {
-            //         Get.to(ProfilePage());
-            //       },
-            //       style: ElevatedButton.styleFrom(
-            //         backgroundColor: Colors.white,
-            //         shape: RoundedRectangleBorder(
-            //           borderRadius: BorderRadius.circular(10),
-            //         ),
-            //       ),
-            //       child: Row(
-            //         mainAxisAlignment: MainAxisAlignment.center,
-            //         children: [
-            //           // Image.asset(
-            //           //   PathStrings.logoutIcon,
-            //           //   width: 20,
-            //           //   color: Colors.black,
-            //           // ),
-            //           Icon(Icons.person),
-            //           const SizedBox(width: 10),
-            //           Text(
-            //             'Profile',
-            //             style: TextStyle(
-            //               fontSize: 16,
-            //               color: Colors.black,
-            //               fontWeight: FontWeight.bold,
-            //             ),
-            //           ),
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // ),
           ],
         ),
       ),

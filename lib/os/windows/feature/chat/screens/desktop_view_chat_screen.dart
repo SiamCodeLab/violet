@@ -488,13 +488,13 @@ class _DesktopChatMessages extends StatelessWidget {
       return Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
-          // ✅ NO SelectionArea — WebView handles native rich text selection
           child: ListView.builder(
             controller: controller.scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            // If streaming, we add 1 extra item for the live bubble
             itemCount: messages.length + (isSending ? 1 : 0),
             itemBuilder: (_, index) {
-              // Last item — streaming bubble or loading dots
+              // Handle the currently streaming message
               if (index == messages.length && isSending) {
                 if (isStreaming && streamingText.isNotEmpty) {
                   return _DesktopMessageBubble(
@@ -507,6 +507,7 @@ class _DesktopChatMessages extends StatelessWidget {
                 return _DesktopLoadingBubble(loadingIcon: loadingIcon);
               }
 
+              // Handle standard messages
               final chat = messages[index];
               final isUser = chat['sender'] == 'user';
               return _DesktopMessageBubble(
