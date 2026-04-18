@@ -13,6 +13,9 @@ class WebSocketService extends getx.GetxService {
 
   WebSocketChannel? _channel;
   StreamSubscription? _streamSubscription;
+  
+  // Timer variable for handling retries
+  Timer? _retryTimer;
 
   // Callbacks for the Controller to listen to
   Function(String)? onMessage;
@@ -29,6 +32,8 @@ class WebSocketService extends getx.GetxService {
 
   @override
   void onClose() {
+    // Cancel the retry timer when service is disposed to prevent memory leaks
+    _retryTimer?.cancel();
     disconnect();
     super.onClose();
   }
@@ -38,13 +43,29 @@ class WebSocketService extends getx.GetxService {
   // ============================================
 
   void connect() {
+    // If already connected, do nothing
     if (_isConnected) return;
 
     try {
       final token = StorageService.getAccessToken();
+
+      // CHANGE: If token is empty, retry every 1 second instead of returning
       if (token.isEmpty) {
-        Console.error('Cannot connect WS: No token');
-        return;
+        Console.error('WS Token missing. Retrying in 1 second...');
+        
+        // Cancel any existing retry timer to avoid stacking multiple timers
+        _retryTimer?.cancel();
+        
+        // Schedule a retry
+        _retryTimer = Timer(const Duration(seconds: 1), () {
+          // Double check if service is still registered and not connected
+          // This prevents attempting to connect if the widget/service was disposed
+          if (Get.isRegistered<WebSocketService>() && !_isConnected) {
+            connect();
+          }
+        });
+        
+        return; 
       }
 
       final uri = Uri.parse('${ApiEndpoint.wsChat}?token=$token');
@@ -52,6 +73,9 @@ class WebSocketService extends getx.GetxService {
 
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
+
+      // Cancel retry timer once connection is initiated successfully
+      _retryTimer?.cancel();
 
       _streamSubscription = _channel!.stream.listen(
         _handleIncomingData,
@@ -77,6 +101,7 @@ class WebSocketService extends getx.GetxService {
   }
 
   void disconnect() {
+    _retryTimer?.cancel(); // Stop any pending retries
     _streamSubscription?.cancel();
     _channel?.sink.close();
     _isConnected = false;
@@ -97,9 +122,6 @@ class WebSocketService extends getx.GetxService {
   // ============================================
 
   void _handleIncomingData(dynamic message) {
-    // We pass the raw string/bytes to the controller via callback.
-    // The controller will parse JSON to check for 'done' signals.
-    // This keeps the service purely for transport.
     if (onMessage != null) {
       onMessage!(message.toString());
     }

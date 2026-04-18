@@ -10,7 +10,7 @@ import 'package:super_clipboard/super_clipboard.dart';
 import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
-import 'package:violet/core/services/storage/websocket_service.dart';
+import 'package:violet/core/services/websocket_service.dart';
 import 'package:violet/core/utils/console.dart';
 import 'package:violet/core/const/api_endpoint.dart';
 import 'package:violet/core/utils/file_picker_helper.dart';
