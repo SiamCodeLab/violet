@@ -33,7 +33,7 @@ Before starting, make sure you have the following:
 
 ```bash
 cd /path/to/your/flutter/project
-flutter build macos
+flutter build macos --release
 ```
 
 ---
@@ -239,8 +239,8 @@ Always run Xcode Archive for every new build. You cannot reuse an old `.app` for
 
 | Value | Where to Find |
 |-------|---------------|
-| Team ID | developer.apple.com/account → Membership Details |
-| App-Specific Password | account.apple.com → Sign-In & Security |
+| Team ID | [developer.apple.com/account](https://developer.apple.com/account) → Membership Details |
+| App-Specific Password | [account.apple.com](https://account.apple.com) account.apple.com → Sign-In & Security |
 | Developer ID Certificate | Xcode → Settings → Accounts → Manage Certificates |
 | `.icns` icon file | Project root folder |
 
