@@ -32,6 +32,7 @@ class OtpSubmitScreen extends StatelessWidget {
         ),
       ),
       backgroundColor: Color(ThemeColor.backgroundColor),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         // Intercepts keyboard events at the screen level to support
         // Enter key submission without requiring explicit button click
@@ -44,59 +45,61 @@ class OtpSubmitScreen extends StatelessWidget {
               _controller.verifyOtp();
             }
           },
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isAndroid ? 20 : 100,
-              vertical: isAndroid ? 20 : 50,
-            ),
-            child: Align(
-              alignment: isAndroid ? Alignment.topCenter : Alignment.center,
-              child: SizedBox(
-                width: 650,
-                child: Column(
-                  mainAxisAlignment: isAndroid
-                      ? MainAxisAlignment.start
-                      : MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    AuthLogo(isAndroid: isAndroid),
-                    AuthTitle(
-                      isAndroid: isAndroid,
-                      title: 'Enter verification code',
-                    ),
-                    const SizedBox(height: 50),
-                    SInputField(
-                      controller: _controller.otp,
-                      keyboardType: TextInputType.number,
-                      labelText: 'OTP',
-                      hintText: 'Enter the OTP sent to your email',
-                    ),
-                    const SizedBox(height: 20),
-                    Obx(
-                      () => SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: () => _controller.verifyOtp(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(ThemeColor.primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isAndroid ? 20 : 100,
+                vertical: isAndroid ? 20 : 50,
+              ),
+              child: Align(
+                alignment: isAndroid ? Alignment.topCenter : Alignment.center,
+                child: SizedBox(
+                  width: 650,
+                  child: Column(
+                    mainAxisAlignment: isAndroid
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      AuthLogo(isAndroid: isAndroid),
+                      AuthTitle(
+                        isAndroid: isAndroid,
+                        title: 'Enter verification code',
+                      ),
+                      const SizedBox(height: 50),
+                      SInputField(
+                        controller: _controller.otp,
+                        keyboardType: TextInputType.number,
+                        labelText: 'OTP',
+                        hintText: 'Enter the OTP sent to your email',
+                      ),
+                      const SizedBox(height: 20),
+                      Obx(
+                        () => SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () => _controller.verifyOtp(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(ThemeColor.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                          ),
-                          child: _controller.isLoading.value
-                              ? const CircularProgressIndicator()
-                              : const Text(
-                                  'Submit',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
+                            child: _controller.isLoading.value
+                                ? const CircularProgressIndicator()
+                                : const Text(
+                                    'Submit',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -34,6 +34,7 @@ class ChangePasswordScreen extends StatelessWidget {
         ),
       ),
       backgroundColor: Color(ThemeColor.backgroundColor),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         // Intercepts keyboard events at the screen level to support
         // Enter key submission without requiring explicit button click
@@ -46,58 +47,63 @@ class ChangePasswordScreen extends StatelessWidget {
               _controller.changePassword();
             }
           },
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isAndroid ? 20 : 100,
-              vertical: isAndroid ? 20 : 50,
-            ),
-            child: Align(
-              alignment: isAndroid ? Alignment.topCenter : Alignment.center,
-              child: SizedBox(
-                width: 650,
-                child: Column(
-                  mainAxisAlignment: isAndroid
-                      ? MainAxisAlignment.start
-                      : MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    AuthLogo(isAndroid: isAndroid),
-                    AuthTitle(isAndroid: isAndroid, title: 'Enter New Password'),
-                    const SizedBox(height: 50),
-                    SInputField(
-                      controller: _controller.password,
-                      keyboardType: TextInputType.visiblePassword,
-                      isSuffixIcon: true,
-                      labelText: 'Password',
-                      hintText: 'Enter your new password',
-                    ),
-                    const SizedBox(height: 20),
-                    SInputField(
-                      controller: _controller.confirmPassword,
-                      keyboardType: TextInputType.visiblePassword,
-                      isSuffixIcon: true,
-                      labelText: 'Confirm',
-                      hintText: 'Re-enter your new password',
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () => _controller.changePassword(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(ThemeColor.primary),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isAndroid ? 20 : 100,
+                vertical: isAndroid ? 20 : 50,
+              ),
+              child: Align(
+                alignment: isAndroid ? Alignment.topCenter : Alignment.center,
+                child: SizedBox(
+                  width: 650,
+                  child: Column(
+                    mainAxisAlignment: isAndroid
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      AuthLogo(isAndroid: isAndroid),
+                      AuthTitle(
+                        isAndroid: isAndroid,
+                        title: 'Enter New Password',
+                      ),
+                      const SizedBox(height: 50),
+                      SInputField(
+                        controller: _controller.password,
+                        keyboardType: TextInputType.visiblePassword,
+                        isSuffixIcon: true,
+                        labelText: 'Password',
+                        hintText: 'Enter your new password',
+                      ),
+                      const SizedBox(height: 20),
+                      SInputField(
+                        controller: _controller.confirmPassword,
+                        keyboardType: TextInputType.visiblePassword,
+                        isSuffixIcon: true,
+                        labelText: 'Confirm',
+                        hintText: 'Re-enter your new password',
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () => _controller.changePassword(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(ThemeColor.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Update Password',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
-                        child: const Text(
-                          'Update Password',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
