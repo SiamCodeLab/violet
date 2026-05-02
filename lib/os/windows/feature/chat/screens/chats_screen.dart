@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/const/path_strings.dart';
 import 'package:violet/core/theme/theme_color.dart';
 import 'package:violet/core/utils/console.dart';
+import 'package:violet/core/utils/utils.dart';
 import 'package:violet/os/windows/feature/chat/widgets/animated_thinking_text.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 import 'package:violet/os/windows/feature/profile/pages/profile_page.dart';
@@ -415,18 +415,10 @@ class _MessageBubble extends StatelessWidget {
           // Copy button - HIDDEN while streaming
           if (!isUser && !isStreaming)
             GestureDetector(
-              onTap: () {
-                final cleanMessage = processedMessage
-                    .replaceAll(RegExp(r'\*\*'), '')
-                    .replaceAll(RegExp(r'\*'), '');
-                Clipboard.setData(ClipboardData(text: cleanMessage));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Copied to clipboard'),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-              },
+              onTap: () => ClipboardService.copyToClipboardAndroid(
+                context,
+                processedMessage,
+              ),
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Icon(Icons.copy_rounded, size: 18, color: Colors.grey),

@@ -1,17 +1,9 @@
 name: violet
-description: "A new Flutter project."
+description: "Violet — AI Support Platform"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 # publish_to: 'none'
-version: 1.0.0+6
-
-msix_config:
-  display_name: Violet
-  publisher_display_name: Your Name
-  identity_name: com.violet.app
-  msix_version: 1.0.0.0
-  logo_path: assets/images/branding/logo.png
-
+version: 1.0.0+7
 
 environment:
   sdk: ^3.10.1
@@ -19,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  # Window management
   window_size: ^0.1.0
 
   # State management
@@ -34,13 +27,13 @@ dependencies:
 
   # Messages Format
   flutter_markdown_plus: ^1.0.7
-  url_launcher: ^6.3.2
-  launcher_name: ^1.0.2
   markdown: ^7.3.1
-  super_clipboard: ^0.9.1
-  webview_flutter: ^4.13.1
-  webview_flutter_android: ^4.11.0
-  webview_flutter_wkwebview: ^3.24.3
+
+  # Url Launcher
+  url_launcher: ^6.3.2
+
+  # Clipboard - Only For Windows and MacOS If you build a Android or iOS App then comment this super_clipboard plugin
+  # super_clipboard: ^0.9.1
 
   #flutter websocket channel
   web_socket_channel: ^3.0.3
@@ -49,11 +42,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  msix: ^3.16.6
-
-
-  flutter_launcher_icons: ^0.14.4
-  change_app_package_name: ^1.4.0
 
 flutter_icons:
   android: true
@@ -63,21 +51,18 @@ flutter_icons:
 launcher_name:
   default: "Violet"
 
-
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
   assets:
-      - assets/images/
-      - assets/images/branding/
-      - assets/icons/
-      - assets/icons/future_icon/
-      - assets/icons/loading_icon/
-
+    - assets/images/
+    - assets/images/branding/
+    - assets/icons/
+    - assets/icons/future_icon/
+    - assets/icons/loading_icon/

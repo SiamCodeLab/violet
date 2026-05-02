@@ -1,18 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
 import 'package:violet/core/services/websocket_service.dart';
-import 'package:violet/core/utils/console.dart';
 import 'package:violet/os/windows/feature/auth/pages/login_screen.dart';
 import 'package:violet/os/windows/feature/home/pages/home_screen.dart';
 import 'package:window_size/window_size.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Enable edge-to-edge for Flutter
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   await StorageService.init();
-  Console.info(StorageService.getAccessToken());
 
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowTitle('Violet App');

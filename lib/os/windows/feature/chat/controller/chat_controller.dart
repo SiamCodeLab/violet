@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:markdown/markdown.dart' as md;
-import 'package:super_clipboard/super_clipboard.dart';
 import 'package:violet/core/services/api_service.dart';
 import 'package:violet/core/services/snackbar_service.dart';
 import 'package:violet/core/services/storage/storage_service.dart';
@@ -479,30 +476,7 @@ class ChatController extends GetxController {
     }
   }
 
-  Future<void> copyAsRichText(String markdownText, BuildContext context) async {
-    try {
-      final html = md.markdownToHtml(
-        markdownText,
-        extensionSet: md.ExtensionSet.gitHubWeb,
-      );
-
-      final clipboard = SystemClipboard.instance;
-      if (clipboard != null) {
-        final item = DataWriterItem();
-        item.add(Formats.htmlText(html));
-        item.add(Formats.plainText(markdownText));
-        await clipboard.write([item]);
-      } else {
-        await Clipboard.setData(ClipboardData(text: markdownText));
-      }
-
-      SnackbarService.success('Copied to clipboard');
-    } catch (e) {
-      Console.error('Copy error: $e');
-      await Clipboard.setData(ClipboardData(text: markdownText));
-      SnackbarService.success('Copied to clipboard');
-    }
-  }
+ 
 
   Future<void> deleteSession(int index) async {
     try {
